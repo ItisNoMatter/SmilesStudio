@@ -46,3 +46,13 @@ Claude, 作業の際は以下のコマンドを必要に応じて自律的に活
     これらのテストは実行されない点に注意）
 *   core-smilesのテスト: `./gradlew :core-smiles:jvmTest`
 *   デスクトップアプリ起動: `./gradlew :desktop-app:run`
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in this repo's GitHub Issues (`ItisNoMatter/SmilesStudio`), using the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context layout: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
