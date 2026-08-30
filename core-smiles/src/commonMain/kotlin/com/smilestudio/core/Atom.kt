@@ -5,6 +5,5 @@ data class Atom(
     val element: Element,
     val charge: Int = 0,
     val isotope: Int? = null,
-    val isAromatic: Boolean = false,
-    val hydrogenCount: Int? = null,
+    val hydrogenCount: HydrogenCount = HydrogenCount.Implicit,
 )
