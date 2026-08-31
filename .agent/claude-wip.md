@@ -1,52 +1,52 @@
 # Claude Code WIP メモ (SmilesStudio プロジェクト基盤構築)
 
-最終更新: 2026-08-31
+最終更新: 2026-09-01
 
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: グリリングで決定した設計（0003・0004・0005・0008）をTDDで実コードに反映済み（未コミット）
+## ステータス: SmilesParser本体実装の設計をグリリングで確定（AnyDR 0012〜0016）。実装はまだ未着手
 
-前回セッションで詰めた`core-smiles`のドメインモデル決定（AnyDR 0003・0004・0005・0008）を、
-CLAUDE.mdのTDDサイクル（Test First → Red → Green）に沿って実コードに反映した。
-**すべて実装済みで`./gradlew allTests`・`./gradlew build`ともグリーン。ただしまだコミットしていない**
-（下記「現在のプロジェクト構成」のファイル群が未コミット状態）。
+前回セッション（2026-08-31）でcore-smilesのドメインモデル決定（0003・0004・0005・0008）を
+実コードに反映し、コミット済み（`e1c1758`）。今回セッション（2026-09-01）は`/grill-with-docs`で
+`SmilesParser.parse()`本体実装の設計方針をグリリングし、5件のAnyDR（0012〜0016）を記録した。
+コード変更はまだ無く、次セッションはこれらの決定に沿ってTDDで実装に着手するフェーズ。
 
-## 直近セッションでやったこと（2026-08-31）
+## 直近セッションでやったこと（2026-09-01）
 
-1. AnyDR 0003〜0008のうち未実装だった3件を、ユーザーの指定順（0003 → 0004/0005 → 0008）で
-   TDD実装した。
-   - **0003**: `Atom.hydrogenCount`を`Int?`から`sealed interface HydrogenCount { Implicit, Explicit(count) }`
-     に変更（新規`HydrogenCount.kt`）。
-   - **0004/0005**: `Atom.isAromatic`フィールドを削除し、`Molecule`に`isAromatic(atomId): Boolean`を追加。
-     内部で`bondsByAtom`（隣接Bondマップ）と`aromaticAtomIds`（芳香族原子の集合）を`by lazy`で
-     キャッシュし、隣接する全Bondが`BondType.AROMATIC`かどうかから導出する。
-   - **0008**: `SmilesParser.parse`の戻り値を`Molecule`から`sealed class ParseResult { Success(Molecule); Failure(reason) }`
-     （新規`ParseResult.kt`）に変更。スコープはユーザーとの相談の結果「型変更のみ」に限定し、
-     実装本体は`ParseResult.Failure("SMILES parsing is not implemented yet")`を返すダミー実装のまま
-     （実際のパースロジックは引き続き未着手、下記「次にやりそうなこと」参照）。
-   - 各ステップとも`MoleculeTest.kt`（0003・0004/0005）・新規`SmilesParserTest.kt`（0008）を
-     先に更新/追加してRedを確認してから実装している。
-2. ユーザーからの新規指示により、**テストメソッド名は日本語で統一する**方針を決定し
-   `docs/any-decision-record/0010-japanese-test-method-names.md`に記録。既存の英語テスト
-   メソッド名（`MoleculeTest.kt`）もすべて日本語に書き換え済み。今後書く全テストも日本語で統一する。
-3. `./gradlew allTests`・`./gradlew build`で最終確認しグリーンを確認済み（コミット前）。
+1. `/grill-with-docs`で`SmilesParser.parse()`本体実装の設計方針を詰めた。
+   - **0012**: 最初のTDD対象スコープを「直鎖+分岐」（例: `CCO`、`CC(=O)O`）に限定。
+     環閉包・芳香族表記は次段階に送る。
+   - **0013**: パーサー内部はTokenizer分離（文字列→トークン列→再帰下降パース）の
+     二段階アーキテクチャで実装する。
+   - **0014**: 角括弧原子表記（水素数指定・電荷・同位体、例: `[CH3]`、`[NH4+]`、`[13C]`）は
+     今回のスコープから除外し、次のイテレーションに送る。
+   - **0015**: 環閉包・芳香族のような構文的には既知だが未対応の記法に遭遇した場合、
+     汎用エラーではなく専用の未対応理由を`ParseResult.Failure`で返す。
+   - **0016**: `ParseResult.Failure`の型（0008）は変えず、`reason`文字列に位置情報を
+     埋め込む（例: "位置5: 不明な文字 'x'"）。
+2. 上記いずれもまだ実コードには反映していない（設計のみ確定、TDD未着手）。
+   `SmilesParser.kt`は引き続きダミー実装のまま。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
-- `0001-core-smiles-id-based-domain-model.md`: IDベース設計（AtomId value class + Map<AtomId, Atom>）。実装済み。
-- `0002-kmp-module-structure-core-smiles-ui-compose.md`: core-smiles・ui-composeを真のKMPモジュールとして構成。実装済み。
-- `0003-atom-hydrogen-count-sealed-interface.md`: `HydrogenCount` sealed interface化。**実装済み**（今回反映）。
-- `0004-derive-aromaticity-from-bonds.md`: 芳香族性をBondから導出。**実装済み**（今回反映）。
-- `0005-cache-aromaticity-with-lazy.md`: 芳香族性の導出を`by lazy`でキャッシュ。**実装済み**（今回反映）。
-- `0006-ring-as-derived-domain-term.md`: `Ring`をドメイン用語として定義（実装は未着手・環検出アルゴリズムはまだ不要）。
-- `0007-atomid-stability-undefined.md`: `AtomId`の安定性は未定義とCONTEXT.mdに明記（ドキュメントのみ、実装変更なし）。
-- `0008-smiles-parser-result-type.md`: `SmilesParser.parse`の戻り値を`ParseResult`に変更。**型のみ実装済み**（今回反映）。パース本体は未着手。
-- `0009-defer-canonical-smiles-writer.md`: canonical SMILES writerは当面スコープ外。
-- `0010-japanese-test-method-names.md`: テストメソッド名は日本語で統一する。**実装済み**（今回反映、既存テストも書き換え済み）。
+- `0001`〜`0010`: 前回までに反映済み（詳細は割愛、コード上も反映済み）。
+- `0011-branch-per-large-change.md`: 通常の変更はmainに直接コミット、大きめの変更や
+  AIレビュー時のみブランチを切る運用ルール。コード変更なし。
+- `0012-smiles-parser-initial-scope-chain-and-branches.md`: SmilesParser初期TDDスコープを
+  直鎖+分岐に限定。**未実装**。
+- `0013-smiles-parser-tokenizer-separation.md`: Tokenizer分離（二段階）アーキテクチャを採用。
+  **未実装**。
+- `0014-defer-bracket-atom-notation.md`: 角括弧原子表記は次イテレーションへ送る決定。
+  （実装対象外にする決定のため、コード変更は発生しない）
+- `0015-unsupported-notation-specific-error.md`: 未対応記法には専用エラー理由を返す。
+  **未実装**。
+- `0016-embed-position-in-failure-reason.md`: `Failure.reason`に位置情報を埋め込む。
+  **未実装**。
 
-`CONTEXT.md`（リポジトリルート）にはImplicit/Explicit Hydrogen Count、Aromatic Atom、
-Aromatic Bond、Ring、AtomIdの5用語を記録済み（変更なし）。
+`CONTEXT.md`（リポジトリルート）は今回のセッションで変更なし（Implicit/Explicit Hydrogen Count、
+Aromatic Atom、Aromatic Bond、Ring、AtomIdの5用語のまま。今回議論したTokenizer等は実装用語で
+あり用語集の対象外と判断）。
 
 ## 現在のプロジェクト構成
 
@@ -60,15 +60,15 @@ core-smiles/                          # kotlin(multiplatform), jvm()ターゲッ
   src/commonMain/kotlin/com/smilestudio/core/
     Element.kt (enum, 有機化学でよく使う元素のサブセット: H,C,N,O,F,P,S,Cl,Br,I)
     AtomId.kt (@JvmInline value class)
-    HydrogenCount.kt   (新規) sealed interface { Implicit, Explicit(count) }
-    ParseResult.kt     (新規) sealed class { Success(Molecule), Failure(reason) }
-    Atom.kt    (isAromaticフィールド削除済み、hydrogenCountはHydrogenCount型)
-    BondType.kt / Bond.kt (変更なし)
-    Molecule.kt        isAromatic(atomId)を追加。bondsByAtom/aromaticAtomIdsをby lazyでキャッシュ
-    SmilesParser.kt    parse()の戻り値はParseResult。中身はParseResult.Failureのダミー実装
+    HydrogenCount.kt   sealed interface { Implicit, Explicit(count) }
+    ParseResult.kt     sealed class { Success(Molecule), Failure(reason: String) }
+    Atom.kt    (element, charge, isotope, hydrogenCount: HydrogenCount)
+    BondType.kt (SINGLE/DOUBLE/TRIPLE/AROMATIC) / Bond.kt (変更なし)
+    Molecule.kt        isAromatic(atomId)。bondsByAtom/aromaticAtomIdsをby lazyでキャッシュ
+    SmilesParser.kt    parse()はParseResult.Failureのダミー実装のまま（未着手）
   src/commonTest/kotlin/com/smilestudio/core/
     MoleculeTest.kt (7件、全て日本語メソッド名、グリーン)
-    SmilesParserTest.kt (新規、1件、グリーン)
+    SmilesParserTest.kt (1件、グリーン。「パース処理が未実装の間はFailureを返す」のみ)
 
 ui-compose/                           # kotlin(multiplatform) + Compose Multiplatform（変更なし）
   build.gradle.kts
@@ -77,23 +77,28 @@ ui-compose/                           # kotlin(multiplatform) + Compose Multipla
 desktop-app/                          # kotlin(jvm) + compose.desktop.application（変更なし）
   build.gradle.kts
   src/main/kotlin/Main.kt
+
+docs/any-decision-record/  0001〜0016
+CONTEXT.md                 5用語（Implicit/Explicit Hydrogen Count, Aromatic Atom, Aromatic Bond, Ring, AtomId）
 ```
+
+## ⚠️ コードと決定のズレ
+
+- AnyDR 0012・0013・0015・0016: 設計は確定したが、`SmilesParser.parse()`は依然として
+  `ParseResult.Failure("SMILES parsing is not implemented yet")`を返すダミー実装のまま
+  （`SmilesParser.kt`未変更、Tokenizer型もまだ存在しない）。次セッションでTDDにより
+  実装に着手する。
 
 ## 既知の注意点（未対応・要フォローアップ）
 
-1. 上記の変更一式（`HydrogenCount.kt`・`ParseResult.kt`・`SmilesParserTest.kt`・
-   `Atom.kt`/`Molecule.kt`/`SmilesParser.kt`/`MoleculeTest.kt`の変更・
-   `docs/any-decision-record/0010-...md`）が**まだコミットされていない**。次のセッション、
-   またはこのセッションの続きでコミットするか要確認。
-2. `compose.runtime`等のバージョンカタログ経由アクセサがCompose Multiplatform 1.12.0で
+1. `compose.runtime`等のバージョンカタログ経由アクセサがCompose Multiplatform 1.12.0で
    非推奨警告になっている。ビルドは通るが警告あり（優先度低、未着手）。
-3. `Element`の元素セットは有機化学サブセット10種（H,C,N,O,F,P,S,Cl,Br,I）で仮実装。
+2. `Element`の元素セットは有機化学サブセット10種（H,C,N,O,F,P,S,Cl,Br,I）で仮実装。
 
 ## 次にやりそうなこと（未着手）
 
-- 未コミットの変更をコミットする（要ユーザー確認）。
-- `SmilesParser.parse()`本体の実装（`ParseResult`は型として存在するので、これに実際のSMILES
-  構文解析ロジックを実装していく。TDDで進める）。
+- AnyDR 0012〜0016に沿って`SmilesParser.parse()`をTDDで実装する（Tokenizer→再帰下降パーサー
+  の順で進める想定。直鎖+分岐のみ、角括弧・環閉包・芳香族は専用エラーで拒否）。
 - `MoleculeCanvas`の実際の描画ロジック（原子・結合の描画）。
 - `Ring`（AnyDR 0006）の環検出アルゴリズムは、実際に必要になった時点で着手。
 - Koog連携（手描き構造式 → SMILES のマルチモーダル認識）は将来タスク。
