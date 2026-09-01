@@ -1,53 +1,47 @@
 # Claude Code WIP メモ (SmilesStudio プロジェクト基盤構築)
 
-最終更新: 2026-09-01
+最終更新: 2026-09-02
 
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: Issue #3（芳香族小文字表記対応）実装・クローズ済み。次はIssue #4（Ring検出）
+## ステータス: Issue #4（Ring検出）実装・クローズ済み。次はIssue #5（2Dレイアウト計算）
 
-前回セッションでIssue #2（環閉包記法）を実装（コミット 0f2cfbd ）。今回セッションはWayfinderの
-唯一のフロンティアだった [Issue #3](https://github.com/ItisNoMatter/SmilesStudio/issues/3)
-（SMILESパーサー: 芳香族小文字表記への対応）をTDDで実装し、コミット 147de49 としてpush済み。
-Issue #3はコメント＋クローズ済み、マップIssue #1のチェックリストも更新済み。
+前回セッションでIssue #3（芳香族小文字表記）を実装（コミット 147de49 ）。今回セッションは
+Wayfinderの唯一のフロンティアだった
+[Issue #4](https://github.com/ItisNoMatter/SmilesStudio/issues/4)
+（core-smiles: Ring検出アルゴリズムの実装）をTDDで実装し、コミット f7bc955 としてpush済み。
+Issue #4はコメント＋クローズ済み、マップIssue #1のチェックリストも更新済み。
 
-## 直近セッションでやったこと（2026-09-01）
+## 直近セッションでやったこと（2026-09-02）
 
-1. Issue #3着手前にCLAUDE.mdの方針に従いトークン表現の選択肢を提示（`Token.AtomSymbol`への
-   `isAromatic`フラグ追加 vs 別トークン型`Token.AromaticAtomSymbol`の新設）。ユーザーは
-   「型レベルの強制力はAI時代において重要」という理由で後者を選択し、AnyDR 0025として記録。
+1. Issue #4着手前にCLAUDE.mdの方針に従い結果表現の選択肢を提示（Ring検出結果を専用の値型
+   `Ring(atoms: List<AtomId>)`で表現 vs 生の`List<List<AtomId>>`を直接返す）。ユーザーは
+   前者（専用型）を選択し、AnyDR 0026として記録。
 2. TDDで実装（Red→Green、`./gradlew allTests`・`./gradlew build`ともにグリーン確認済み）。
-   - `Token.kt`: `AromaticAtomSymbol(element: Element)`を追加。
-   - `Tokenizer.kt`: `c,n,o,p,s`を`AromaticAtomSymbol`にマッピング。`b`（芳香族ホウ素）は
-     `Element`列挙型に対応ケースがないため引き続き未対応（専用理由のFailureのまま）。
-   - `SmilesParser.kt`: `aromaticNotationAtoms: MutableSet<AtomId>`を追加し、原子生成ロジックを
-     `addAtom(element, aromatic)`ローカル関数に共通化。結合記号省略時のデフォルト結合種別は
-     「両端の原子がともに芳香族小文字表記ならAROMATIC、そうでなければSINGLE」というルールに
-     変更。環閉包（Issue #2）のボンド生成にも同じルールを適用するよう修正。
-   - `TokenizerTest.kt`/`SmilesParserTest.kt`: ベンゼン（`c1ccccc1`、全結合AROMATIC）・
-     トルエン様分子（`Cc1ccccc1`、非芳香族原子との結合はSINGLE）・芳香族ホウ素の未対応エラーの
-     テストを追加。
-3. GitHub側: Issue #3にコメント＋クローズ、マップIssue #1のChildrenチェックリストと
-   Decisions-so-farを更新（AnyDR 0025・コミット 147de49 へのリンクを追加）。
-4. コミットSHAの表記ルールをユーザーから指摘され反映（GitHubの自動リンクはバッククォート囲み
-   や前後スペースなしの地の文密着では効かないため、半角スペースで両端を囲む）。
-   `feedback_github_bare_commit_sha_links`メモリを更新し、`.git/hooks/pre-commit`
-   （リポジトリ追跡外）にバッククォート囲み・密着どちらも検知する非ブロッキングの警告を追加。
-   Issue #2の既存コメントとマップIssueの過去記載も新しい表記に修正済み。
-5. コミット 0f2cfbd ・ 147de49 とも`origin/main`にpush済み。
+   - `Ring.kt`【新規】: `data class Ring(val atoms: List<AtomId>)`。
+   - `Molecule.kt`: `rings: List<Ring>`を`by lazy`の派生プロパティとして追加。結合グラフに
+     対するDFSで背後辺（back edge）を検出し、1本の背後辺につき1つの環を`parent`マップから
+     逆再構成する方式。v1スコープ（AnyDR 0018/0019、単環・非縮合環）では十分だが、縮合環に
+     対応する場合は本格的なSSSRアルゴリズムへの再訪が必要（AnyDR 0026に明記）。
+   - `MoleculeTest.kt`: 直鎖・分岐（環なし）でringsが空になること、3員環・6員環で環を一周する
+     原子の並び順が正しく返ることのテストを追加。
+3. GitHub側: Issue #4にコメント＋クローズ、マップIssue #1のChildrenチェックリストと
+   Decisions-so-farを更新（AnyDR 0026・コミット f7bc955 へのリンクを追加）。
+4. コミット 147de49 ・ f7bc955 とも`origin/main`にpush済み。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
 - `0001`〜`0016`: 前回までに反映済み。コード上も反映済み。
-- `0017`（テキスト入力+読み取り専用描画）・`0019`〜`0023`（レイアウト/Kekulé描画/配布/Issue構成/
-  CI）: **未実装**。対応するIssue（#5〜#10）着手時にコードへ反映する。
-- `0018`（環閉包＋芳香族小文字表記までのv1文法スコープ）: **実装済み**（環閉包=Issue #2、
-  芳香族小文字表記=Issue #3、いずれも実装済み）。
-- `0024`（Issue #2は環閉包ラベルを番号のみ対応、結合種別付与記法は未対応）: **実装済み**
-  （コミット 0f2cfbd ）。
-- `0025`（Issue #3は芳香族小文字表記用に別トークン型を新設、bはElement未対応のため未対応）:
-  **実装済み**（コミット 147de49 ）。
+- `0017`（テキスト入力+読み取り専用描画）・`0020`〜`0023`（Kekulé描画/配布/Issue構成/CI）:
+  **未実装**。対応するIssue（#6〜#10）着手時にコードへ反映する。
+- `0018`（環閉包＋芳香族小文字表記までのv1文法スコープ）: **実装済み**（Issue #2・#3）。
+- `0019`（固定角度配置レイアウト）: **一部の前提（Ring検出）のみ実装済み**。座標計算本体は
+  Issue #5で未着手。
+- `0024`（Issue #2は環閉包ラベルは番号のみ対応）: **実装済み**（コミット 0f2cfbd ）。
+- `0025`（Issue #3は芳香族小文字表記用に別トークン型を新設）: **実装済み**（コミット 147de49 ）。
+- `0026`（Issue #4はRing検出結果を専用の値型`Ring`で表現、DFS背後辺方式）: **実装済み**
+  （コミット f7bc955 ）。
 
 ## 現在のプロジェクト構成
 
@@ -65,7 +59,9 @@ core-smiles/                          # kotlin(multiplatform), jvm()ターゲッ
     ParseResult.kt     sealed class { Success(Molecule), Failure(reason: String) }
     Atom.kt    (element, charge, isotope, hydrogenCount: HydrogenCount)
     BondType.kt (SINGLE/DOUBLE/TRIPLE/AROMATIC) / Bond.kt
-    Molecule.kt        isAromatic(atomId)。bondsByAtom/aromaticAtomIdsをby lazyでキャッシュ
+    Ring.kt            【新規】data class Ring(val atoms: List<AtomId>)
+    Molecule.kt        isAromatic(atomId)・rings: List<Ring>。bondsByAtom/aromaticAtomIds/rings
+                       をby lazyでキャッシュ。rings はDFS背後辺検出（1背後辺=1環、縮合環は未対応）
     Token.kt           sealed interface { AtomSymbol, AromaticAtomSymbol, BondSymbol,
                         RingClosure(label), LParen, RParen }
     PositionedToken.kt data class(token, position: Int)
@@ -75,7 +71,7 @@ core-smiles/                          # kotlin(multiplatform), jvm()ターゲッ
     SmilesParser.kt    parse()はTokenizer+再帰下降で直鎖+分岐+環閉包+芳香族のMoleculeを構築。
                        結合種別省略時は両端が芳香族小文字表記ならAROMATIC、それ以外はSINGLE
   src/commonTest/kotlin/com/smilestudio/core/
-    MoleculeTest.kt (7件、日本語メソッド名、グリーン)
+    MoleculeTest.kt (11件、日本語メソッド名、グリーン。ring検出のテストを追加)
     TokenizerTest.kt (13件、グリーン)
     SmilesParserTest.kt (21件、グリーン)
 
@@ -87,15 +83,15 @@ desktop-app/                          # kotlin(jvm) + compose.desktop.applicatio
   build.gradle.kts
   src/main/kotlin/Main.kt (ウィンドウを開いて空のMoleculeCanvasを表示するのみ)
 
-docs/any-decision-record/  0001〜0025
+docs/any-decision-record/  0001〜0026
 CONTEXT.md                 5用語（Implicit/Explicit Hydrogen Count, Aromatic Atom, Aromatic Bond, Ring, AtomId）。変更なし
-GitHub Issues               #1(map) + #4〜#10(未着手、Wayfinder方式)。#2・#3はクローズ済み
+GitHub Issues               #1(map) + #5〜#10(未着手、Wayfinder方式)。#2・#3・#4はクローズ済み
 .git/hooks/pre-commit       コミットSHA表記チェック用の非ブロッキング警告（リポジトリ追跡外）
 ```
 
 ## ⚠️ コードと決定のズレ
 
-- `0019`（固定角度配置レイアウト）→ Issue #4, #5。座標計算ロジックは未着手。
+- `0019`（固定角度配置レイアウト、座標計算本体）→ Issue #5。Ring検出は済んでいるが座標計算は未着手。
 - `0020`（Kekulé描画）→ Issue #6。
 - `0017`（テキスト入力+描画）・実際のCanvas描画 → Issue #7, #8。`MoleculeCanvas`は空、
   `desktop-app`にSMILES入力欄は存在しない。
@@ -108,12 +104,14 @@ GitHub Issues               #1(map) + #4〜#10(未着手、Wayfinder方式)。#2
    非推奨警告になっている。ビルドは通るが警告あり（優先度低、未着手）。
 2. `Element`の元素セットは有機化学サブセット10種（H,C,N,O,F,P,S,Cl,Br,I）で仮実装。芳香族小文字
    の`b`（ホウ素）はこのため未対応のまま。
+3. `Molecule.rings`のDFS背後辺方式は縮合環・橋かけ環を正しく扱えない（AnyDR 0026）。v1スコープ
+   では問題ないが、将来スコープを広げる際は要再検討。
 
 ## 次にやりそうなこと（未着手）
 
-- **Issue #4「core-smiles: Ring検出アルゴリズムの実装」から着手**（Issue #3完了により
-  依存が解消され、現在の唯一のフロンティアIssue）。TDDで進め、`./gradlew allTests`のグリーンを
-  確認する。
-- 以降はIssue依存関係の順（#4→#5,#6→#7→#8→#9→#10）に沿って進める。
+- **Issue #5「core-smiles: 2Dレイアウト計算（固定角度配置アルゴリズム）」から着手**（Issue #4
+  完了により依存が解消され、現在の唯一のフロンティアIssue）。`Molecule.rings`を使って環を正多角形
+  として配置するロジックを実装する。TDDで進め、`./gradlew allTests`のグリーンを確認する。
+- 以降はIssue依存関係の順（#5→#6→#7→#8→#9→#10）に沿って進める。
 - Koog連携・グラフィカルな構造エディタ（AnyDR 0017で保留したアプローチB）は、v1リリース後の
   将来タスク。
