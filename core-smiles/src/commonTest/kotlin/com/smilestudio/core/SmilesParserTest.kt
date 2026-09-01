@@ -81,11 +81,98 @@ class SmilesParserTest {
     }
 
     @Test
-    fun `環閉包表記は未対応エラーになる`() {
-        val result = SmilesParser.parse("C1CCCCC1")
+    fun `環閉包記法で環状分子をパースする`() {
+        val result = SmilesParser.parse("C1CCC1")
+
+        assertIs<ParseResult.Success>(result)
+        val c0 = AtomId(0)
+        val c1 = AtomId(1)
+        val c2 = AtomId(2)
+        val c3 = AtomId(3)
+        assertEquals(
+            Molecule(
+                atoms = mapOf(
+                    c0 to Atom(id = c0, element = Element.C),
+                    c1 to Atom(id = c1, element = Element.C),
+                    c2 to Atom(id = c2, element = Element.C),
+                    c3 to Atom(id = c3, element = Element.C),
+                ),
+                bonds = listOf(
+                    Bond(c0, c1, BondType.SINGLE),
+                    Bond(c1, c2, BondType.SINGLE),
+                    Bond(c2, c3, BondType.SINGLE),
+                    Bond(c0, c3, BondType.SINGLE),
+                ),
+            ),
+            result.molecule,
+        )
+    }
+
+    @Test
+    fun `環閉包ラベルは閉じた後に再利用できる`() {
+        val result = SmilesParser.parse("C1CC1C1CC1")
+
+        assertIs<ParseResult.Success>(result)
+        val c0 = AtomId(0)
+        val c1 = AtomId(1)
+        val c2 = AtomId(2)
+        val c3 = AtomId(3)
+        val c4 = AtomId(4)
+        val c5 = AtomId(5)
+        assertEquals(
+            Molecule(
+                atoms = mapOf(
+                    c0 to Atom(id = c0, element = Element.C),
+                    c1 to Atom(id = c1, element = Element.C),
+                    c2 to Atom(id = c2, element = Element.C),
+                    c3 to Atom(id = c3, element = Element.C),
+                    c4 to Atom(id = c4, element = Element.C),
+                    c5 to Atom(id = c5, element = Element.C),
+                ),
+                bonds = listOf(
+                    Bond(c0, c1, BondType.SINGLE),
+                    Bond(c1, c2, BondType.SINGLE),
+                    Bond(c0, c2, BondType.SINGLE),
+                    Bond(c2, c3, BondType.SINGLE),
+                    Bond(c3, c4, BondType.SINGLE),
+                    Bond(c4, c5, BondType.SINGLE),
+                    Bond(c3, c5, BondType.SINGLE),
+                ),
+            ),
+            result.molecule,
+        )
+    }
+
+    @Test
+    fun `閉じられていない環閉包ラベルはエラーになる`() {
+        val result = SmilesParser.parse("C1CC")
 
         assertIs<ParseResult.Failure>(result)
-        assertEquals("位置1: 環閉包表記は未対応です", result.reason)
+        assertEquals("位置1: 環閉包ラベル1が閉じられていません", result.reason)
+    }
+
+    @Test
+    fun `環閉包ラベルが自身を参照しているとエラーになる`() {
+        val result = SmilesParser.parse("C11")
+
+        assertIs<ParseResult.Failure>(result)
+        assertEquals("位置2: 環閉包ラベル1が自身を参照しています", result.reason)
+    }
+
+    @Test
+    fun `原子の前に環閉包ラベルがあるとエラーになる`() {
+        val result = SmilesParser.parse("1C")
+
+        assertIs<ParseResult.Failure>(result)
+        assertEquals("位置0: 環閉包ラベルの前に原子がありません", result.reason)
+    }
+
+    @Test
+    fun `環閉包ラベルへの結合種別指定は未対応エラーになる`() {
+        val result = SmilesParser.parse("C=1CCC1")
+
+        assertIs<ParseResult.Failure>(result)
+        assertEquals("位置1: 環閉包ラベルへの結合種別指定は未対応です", result.reason)
     }
 
     @Test

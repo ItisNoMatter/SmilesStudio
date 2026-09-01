@@ -47,7 +47,10 @@ object Tokenizer {
                     i += 1
                 }
                 c == '[' -> return TokenizeResult.Failure("位置$i: 角括弧原子表記は未対応です")
-                c.isDigit() -> return TokenizeResult.Failure("位置$i: 環閉包表記は未対応です")
+                c.isDigit() -> {
+                    tokens += PositionedToken(Token.RingClosure(c.digitToInt()), i)
+                    i += 1
+                }
                 c in aromaticSubset -> return TokenizeResult.Failure("位置$i: 芳香族表記は未対応です")
                 c.isUpperCase() -> {
                     val twoChar = smiles.substring(i, minOf(i + 2, smiles.length))

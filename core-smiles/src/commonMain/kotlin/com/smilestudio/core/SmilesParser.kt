@@ -17,6 +17,7 @@ object SmilesParser {
         val atoms = mutableMapOf<AtomId, Atom>()
         val bonds = mutableListOf<Bond>()
         val branchStack = ArrayDeque<Pair<AtomId?, Int>>()
+        val pendingRingClosures = mutableMapOf<Int, Pair<AtomId, Int>>()
         var nextAtomId = 0
         var currentAtom: AtomId? = null
         var pendingBond: BondType? = null
@@ -45,6 +46,23 @@ object SmilesParser {
                     pendingBond = token.bondType
                     pendingBondPosition = positioned.position
                 }
+                is Token.RingClosure -> {
+                    val atom = currentAtom
+                        ?: return ParseResult.Failure("位置${positioned.position}: 環閉包ラベルの前に原子がありません")
+                    if (pendingBond != null) {
+                        return ParseResult.Failure("位置$pendingBondPosition: 環閉包ラベルへの結合種別指定は未対応です")
+                    }
+                    val pending = pendingRingClosures.remove(token.label)
+                    if (pending == null) {
+                        pendingRingClosures[token.label] = atom to positioned.position
+                    } else {
+                        val (partnerAtom, _) = pending
+                        if (partnerAtom == atom) {
+                            return ParseResult.Failure("位置${positioned.position}: 環閉包ラベル${token.label}が自身を参照しています")
+                        }
+                        bonds += Bond(atom1 = partnerAtom, atom2 = atom, type = BondType.SINGLE)
+                    }
+                }
                 Token.LParen -> {
                     if (currentAtom == null) {
                         return ParseResult.Failure("位置${positioned.position}: 分岐の開始位置に原子がありません")
@@ -68,6 +86,10 @@ object SmilesParser {
         }
         if (branchStack.isNotEmpty()) {
             return ParseResult.Failure("位置${branchStack.last().second}: 閉じ括弧がありません")
+        }
+        if (pendingRingClosures.isNotEmpty()) {
+            val (label, pending) = pendingRingClosures.entries.first()
+            return ParseResult.Failure("位置${pending.second}: 環閉包ラベル${label}が閉じられていません")
         }
 
         return ParseResult.Success(Molecule(atoms = atoms, bonds = bonds))

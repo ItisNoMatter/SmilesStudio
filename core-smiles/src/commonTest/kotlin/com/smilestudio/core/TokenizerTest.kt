@@ -110,11 +110,32 @@ class TokenizerTest {
     }
 
     @Test
-    fun `環閉包の数字は専用の未対応理由を返す`() {
+    fun `環閉包ラベルをRingClosureトークンに変換する`() {
         val result = Tokenizer.tokenize("C1")
 
-        assertIs<TokenizeResult.Failure>(result)
-        assertEquals("位置1: 環閉包表記は未対応です", result.reason)
+        assertIs<TokenizeResult.Success>(result)
+        assertEquals(
+            listOf(
+                PositionedToken(Token.AtomSymbol(Element.C), 0),
+                PositionedToken(Token.RingClosure(1), 1),
+            ),
+            result.tokens,
+        )
+    }
+
+    @Test
+    fun `連続する環閉包ラベルはそれぞれ独立したトークンに変換する`() {
+        val result = Tokenizer.tokenize("C12")
+
+        assertIs<TokenizeResult.Success>(result)
+        assertEquals(
+            listOf(
+                PositionedToken(Token.AtomSymbol(Element.C), 0),
+                PositionedToken(Token.RingClosure(1), 1),
+                PositionedToken(Token.RingClosure(2), 2),
+            ),
+            result.tokens,
+        )
     }
 
     @Test
