@@ -92,4 +92,91 @@ class MoleculeTest {
 
         assertFalse(molecule.isAromatic(c1))
     }
+
+    @Test
+    fun `環を持たない直鎖分子のringsは空になる`() {
+        val c0 = AtomId(0)
+        val c1 = AtomId(1)
+        val o2 = AtomId(2)
+        val molecule = Molecule(
+            atoms = mapOf(
+                c0 to Atom(id = c0, element = Element.C),
+                c1 to Atom(id = c1, element = Element.C),
+                o2 to Atom(id = o2, element = Element.O),
+            ),
+            bonds = listOf(
+                Bond(c0, c1, BondType.SINGLE),
+                Bond(c1, o2, BondType.SINGLE),
+            ),
+        )
+
+        assertTrue(molecule.rings.isEmpty())
+    }
+
+    @Test
+    fun `分岐を持つが環を持たない分子のringsは空になる`() {
+        val c0 = AtomId(0)
+        val c1 = AtomId(1)
+        val o2 = AtomId(2)
+        val o3 = AtomId(3)
+        val molecule = Molecule(
+            atoms = mapOf(
+                c0 to Atom(id = c0, element = Element.C),
+                c1 to Atom(id = c1, element = Element.C),
+                o2 to Atom(id = o2, element = Element.O),
+                o3 to Atom(id = o3, element = Element.O),
+            ),
+            bonds = listOf(
+                Bond(c0, c1, BondType.SINGLE),
+                Bond(c1, o2, BondType.DOUBLE),
+                Bond(c1, o3, BondType.SINGLE),
+            ),
+        )
+
+        assertTrue(molecule.rings.isEmpty())
+    }
+
+    @Test
+    fun `環閉包を含む分子は環を一周する原子の並びをringsとして返す`() {
+        val c0 = AtomId(0)
+        val c1 = AtomId(1)
+        val c2 = AtomId(2)
+        val molecule = Molecule(
+            atoms = mapOf(
+                c0 to Atom(id = c0, element = Element.C),
+                c1 to Atom(id = c1, element = Element.C),
+                c2 to Atom(id = c2, element = Element.C),
+            ),
+            bonds = listOf(
+                Bond(c0, c1, BondType.SINGLE),
+                Bond(c1, c2, BondType.SINGLE),
+                Bond(c0, c2, BondType.SINGLE),
+            ),
+        )
+
+        assertEquals(listOf(Ring(listOf(c0, c1, c2))), molecule.rings)
+    }
+
+    @Test
+    fun `6員環は原子の並び順を保ったままringsとして返される`() {
+        val c0 = AtomId(0)
+        val c1 = AtomId(1)
+        val c2 = AtomId(2)
+        val c3 = AtomId(3)
+        val c4 = AtomId(4)
+        val c5 = AtomId(5)
+        val molecule = Molecule(
+            atoms = listOf(c0, c1, c2, c3, c4, c5).associateWith { Atom(id = it, element = Element.C) },
+            bonds = listOf(
+                Bond(c0, c1, BondType.AROMATIC),
+                Bond(c1, c2, BondType.AROMATIC),
+                Bond(c2, c3, BondType.AROMATIC),
+                Bond(c3, c4, BondType.AROMATIC),
+                Bond(c4, c5, BondType.AROMATIC),
+                Bond(c0, c5, BondType.AROMATIC),
+            ),
+        )
+
+        assertEquals(listOf(Ring(listOf(c0, c1, c2, c3, c4, c5))), molecule.rings)
+    }
 }
