@@ -20,6 +20,14 @@ object Tokenizer {
 
     private val aromaticSubset = setOf('b', 'c', 'n', 'o', 'p', 's')
 
+    private val aromaticElements = mapOf(
+        'c' to Element.C,
+        'n' to Element.N,
+        'o' to Element.O,
+        'p' to Element.P,
+        's' to Element.S,
+    )
+
     fun tokenize(smiles: String): TokenizeResult {
         val tokens = mutableListOf<PositionedToken>()
         var i = 0
@@ -51,7 +59,12 @@ object Tokenizer {
                     tokens += PositionedToken(Token.RingClosure(c.digitToInt()), i)
                     i += 1
                 }
-                c in aromaticSubset -> return TokenizeResult.Failure("位置$i: 芳香族表記は未対応です")
+                c in aromaticSubset -> {
+                    val aromaticElement = aromaticElements[c]
+                        ?: return TokenizeResult.Failure("位置$i: 芳香族表記は未対応です")
+                    tokens += PositionedToken(Token.AromaticAtomSymbol(aromaticElement), i)
+                    i += 1
+                }
                 c.isUpperCase() -> {
                     val twoChar = smiles.substring(i, minOf(i + 2, smiles.length))
                     val twoCharElement = twoCharElements[twoChar]

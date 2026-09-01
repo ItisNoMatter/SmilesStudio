@@ -176,8 +176,52 @@ class SmilesParserTest {
     }
 
     @Test
-    fun `芳香族表記は未対応エラーになる`() {
+    fun `芳香族小文字表記でベンゼン環をパースする`() {
         val result = SmilesParser.parse("c1ccccc1")
+
+        assertIs<ParseResult.Success>(result)
+        val c0 = AtomId(0)
+        val c1 = AtomId(1)
+        val c2 = AtomId(2)
+        val c3 = AtomId(3)
+        val c4 = AtomId(4)
+        val c5 = AtomId(5)
+        assertEquals(
+            Molecule(
+                atoms = mapOf(
+                    c0 to Atom(id = c0, element = Element.C),
+                    c1 to Atom(id = c1, element = Element.C),
+                    c2 to Atom(id = c2, element = Element.C),
+                    c3 to Atom(id = c3, element = Element.C),
+                    c4 to Atom(id = c4, element = Element.C),
+                    c5 to Atom(id = c5, element = Element.C),
+                ),
+                bonds = listOf(
+                    Bond(c0, c1, BondType.AROMATIC),
+                    Bond(c1, c2, BondType.AROMATIC),
+                    Bond(c2, c3, BondType.AROMATIC),
+                    Bond(c3, c4, BondType.AROMATIC),
+                    Bond(c4, c5, BondType.AROMATIC),
+                    Bond(c0, c5, BondType.AROMATIC),
+                ),
+            ),
+            result.molecule,
+        )
+    }
+
+    @Test
+    fun `芳香族原子と非芳香族原子の間の結合はSINGLEになる`() {
+        val result = SmilesParser.parse("Cc1ccccc1")
+
+        assertIs<ParseResult.Success>(result)
+        val bonds = result.molecule.bonds
+        assertEquals(BondType.SINGLE, bonds.first().type)
+        assertEquals(6, bonds.count { it.type == BondType.AROMATIC })
+    }
+
+    @Test
+    fun `芳香族ホウ素(b)は未対応エラーになる`() {
+        val result = SmilesParser.parse("b")
 
         assertIs<ParseResult.Failure>(result)
         assertEquals("位置0: 芳香族表記は未対応です", result.reason)

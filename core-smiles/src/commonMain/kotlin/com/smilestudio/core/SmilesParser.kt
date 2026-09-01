@@ -18,26 +18,40 @@ object SmilesParser {
         val bonds = mutableListOf<Bond>()
         val branchStack = ArrayDeque<Pair<AtomId?, Int>>()
         val pendingRingClosures = mutableMapOf<Int, Pair<AtomId, Int>>()
+        val aromaticNotationAtoms = mutableSetOf<AtomId>()
         var nextAtomId = 0
         var currentAtom: AtomId? = null
         var pendingBond: BondType? = null
         var pendingBondPosition: Int? = null
 
+        fun addAtom(element: Element, aromatic: Boolean): ParseResult.Failure? {
+            val parent = currentAtom
+            if (pendingBond != null && parent == null) {
+                return ParseResult.Failure("位置$pendingBondPosition: 結合記号の前に原子がありません")
+            }
+            val newAtomId = AtomId(nextAtomId++)
+            atoms[newAtomId] = Atom(id = newAtomId, element = element)
+            if (parent != null) {
+                val bondType = pendingBond
+                    ?: if (aromatic && parent in aromaticNotationAtoms) BondType.AROMATIC else BondType.SINGLE
+                bonds += Bond(atom1 = parent, atom2 = newAtomId, type = bondType)
+            }
+            if (aromatic) {
+                aromaticNotationAtoms += newAtomId
+            }
+            pendingBond = null
+            pendingBondPosition = null
+            currentAtom = newAtomId
+            return null
+        }
+
         for (positioned in tokens) {
             when (val token = positioned.token) {
                 is Token.AtomSymbol -> {
-                    val parent = currentAtom
-                    if (pendingBond != null && parent == null) {
-                        return ParseResult.Failure("位置$pendingBondPosition: 結合記号の前に原子がありません")
-                    }
-                    val newAtomId = AtomId(nextAtomId++)
-                    atoms[newAtomId] = Atom(id = newAtomId, element = token.element)
-                    if (parent != null) {
-                        bonds += Bond(atom1 = parent, atom2 = newAtomId, type = pendingBond ?: BondType.SINGLE)
-                    }
-                    pendingBond = null
-                    pendingBondPosition = null
-                    currentAtom = newAtomId
+                    addAtom(token.element, aromatic = false)?.let { return it }
+                }
+                is Token.AromaticAtomSymbol -> {
+                    addAtom(token.element, aromatic = true)?.let { return it }
                 }
                 is Token.BondSymbol -> {
                     if (pendingBond != null) {
@@ -60,7 +74,12 @@ object SmilesParser {
                         if (partnerAtom == atom) {
                             return ParseResult.Failure("位置${positioned.position}: 環閉包ラベル${token.label}が自身を参照しています")
                         }
-                        bonds += Bond(atom1 = partnerAtom, atom2 = atom, type = BondType.SINGLE)
+                        val bondType = if (atom in aromaticNotationAtoms && partnerAtom in aromaticNotationAtoms) {
+                            BondType.AROMATIC
+                        } else {
+                            BondType.SINGLE
+                        }
+                        bonds += Bond(atom1 = partnerAtom, atom2 = atom, type = bondType)
                     }
                 }
                 Token.LParen -> {

@@ -139,8 +139,25 @@ class TokenizerTest {
     }
 
     @Test
-    fun `芳香族の小文字表記は専用の未対応理由を返す`() {
-        val result = Tokenizer.tokenize("c")
+    fun `芳香族小文字表記をAromaticAtomSymbolトークンに変換する`() {
+        val result = Tokenizer.tokenize("cnops")
+
+        assertIs<TokenizeResult.Success>(result)
+        assertEquals(
+            listOf(
+                PositionedToken(Token.AromaticAtomSymbol(Element.C), 0),
+                PositionedToken(Token.AromaticAtomSymbol(Element.N), 1),
+                PositionedToken(Token.AromaticAtomSymbol(Element.O), 2),
+                PositionedToken(Token.AromaticAtomSymbol(Element.P), 3),
+                PositionedToken(Token.AromaticAtomSymbol(Element.S), 4),
+            ),
+            result.tokens,
+        )
+    }
+
+    @Test
+    fun `芳香族ホウ素(b)は専用の未対応理由を返す`() {
+        val result = Tokenizer.tokenize("b")
 
         assertIs<TokenizeResult.Failure>(result)
         assertEquals("位置0: 芳香族表記は未対応です", result.reason)
