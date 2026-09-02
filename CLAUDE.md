@@ -6,7 +6,7 @@ Android（Shipaton 2026ハッカソン対応、`android-app`モジュール追�
 
 ## Shipaton 2026対応（現在の最優先事項）
 RevenueCat主催のモバイルアプリハッカソン（2026/8/1〜9/30）に参加中。詳細な方針は
-`docs/any-decision-record/0027`〜`0038`を参照。要点:
+`docs/any-decision-record/0027`〜`0044`を参照。要点:
 *   Android対応が最優先（`android-app`モジュール追加、実装済み）。iOS対応は優先度低。
 *   手描き構造式画像 → Koog経由のVision LLM → SMILES変換 → 再描画、というMVP機能を実装する
     （画像1枚→SMILES候補1つ→再描画のみ。詳細は0028）。
@@ -18,6 +18,17 @@ RevenueCat主催のモバイルアプリハッカソン（2026/8/1〜9/30）に�
 *   OSS戦略は「三層防御」構想（型システム・AIレビュー・標準装備の期待値テストハーネス）を
     採用する（0037、0031/0032を統合・拡張）。FIR/K2プラグインは将来構想として先送り。
 *   OSSライセンスはMITを採用する（0038）。
+
+### BuildInPublicツイート運用（`/buildinpublic-tweet` Skillが参照）
+`docs/any-decision-record/`内の決定を`#BuildInPublicAward`向けにツイートする際の規約（0039〜0044）:
+*   ハッシュタグ: `#Shipaton #BuildInPublic`（Shipaton公式ルールで必須/任意と規定。追加の技術系
+    ハッシュタグを足すかはその都度判断してよい）
+*   RevenueCat公式アカウントへのメンションは不要（ルール上の義務なし）
+*   トーン: 完了報告ではなく、「なぜその決定に至ったか」「何を学んだか」を一言添える、開発の
+    過程を共有するトーン
+*   言語: 英語のみ（日本語版は作らない）
+*   リンク先: 該当AnyDRの英語版（`docs/any-decision-record/en/<番号>-*.md`、なければSkillが
+    オンデマンドで生成する）
 
 ## 開発ルール・制約
 *   **言語 & ビルド:** Kotlin (最新安定版) / Gradle Kotlin DSL (`.kts`) を使用すること。
