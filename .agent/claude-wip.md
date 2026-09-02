@@ -5,103 +5,106 @@
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: Shipaton方針の更新（課金・OSS戦略）を反映完了。次はIssue #5（レンダリングパイプライン）かIssue #14
+## ステータス: Issue #5（2Dレイアウト計算）実装・クローズ済み。次はIssue #6かIssue #14
 
-前回セッションでIssue #12（android-appモジュール追加）を実装・クローズ（コミット 26e9c84 ）。
-今回セッションは2つの作業を行った。(1) `/grill-with-docs`でIssue #13の実質的な着手順序を検討し、
-「Issue #1の#5〜#7（レンダリングパイプライン）を先に片付けてからIssue #13に戻る」という
-AnyDR 0035を記録。(2) ユーザーから更新版のShipaton方針ドキュメントが共有され、課金モデル
-（BYOKハイブリッド→B案/C案）とOSS戦略（型システムのみ→三層防御構想）の変更をAnyDR 0036〜0038
-として記録し、GitHub Issue・CLAUDE.md・LICENSEファイルに反映済み。**コード変更はなし**
-（ドキュメント・GitHub Issueのみ）。
+前回セッションでShipaton方針更新（課金B/C案・三層防御OSS戦略）をAnyDR 0035〜0038として記録
+（コミット 6828338 ・ d7ecf87 ）。今回セッションは3つの作業を行った。
+(1) BuildInPublicツイート作成Skill（`buildinpublic-tweet`、グローバル配置）を`/grill-with-docs`で
+設計・実装（AnyDR 0039〜0044）。
+(2) 実際にAnyDR 0028のツイートを試作し、Skill出力の品質フィードバック（文字数に余裕があっても
+自然な文章を優先すべき）をSKILL.mdと個人メモリに反映。
+(3) Issue #5（2Dレイアウト計算）を`/grill-with-docs`で設計しTDD実装、クローズ（AnyDR 0045〜0047、
+コミット 899571e ）。
+
+**⚠️ 注意**: 作業ツリーに、このセッションが作成していない未コミットの変更がある
+（`CLAUDE.md`の受賞戦略・BuildInPublic運用に関する追記、`docs/any-decision-record/0048`・`0049`）。
+別セッションまたはユーザーによる作業と判断し、あえて触れていない。次セッションで状況を再確認し、
+必要なら経緯を確認してからコミットすること。
 
 ## 直近セッションでやったこと（2026-09-03）
 
-1. `/grill-with-docs`でIssue #13（ui-composeのモバイル向け調整）をグリリング。`MoleculeCanvas`が
-   依然空のCanvasのままで実質的に適応対象が存在しないことを指摘し、3案を提示。ユーザーは
-   「AnyDR 0034を見直し、Shipatonのクリティカルパス上必要なIssue #1の#5〜#7を先に片付けてから
-   Issue #13に戻る」を選択。AnyDR 0035として記録。
-2. ユーザーから更新版「Shipaton 2026 対応方針(最新版)」ドキュメントが共有された。前回記録した
-   AnyDR 0027〜0034と突き合わせて差分を検出し、懸念点を確認：
-   - 旧AnyDR 0030の「1週間無料トライアル」が新方針の説明から欠落 → ユーザーに確認したところ
-     トライアルは廃止、B案（回数制フリーミアム）/C案（即ペイウォール）に一本化と判明。
-   - 「OSSライセンスはMITを軸に検討」という記述 → ユーザーに確認したところMIT決定として
-     記録してよいと判明。
-3. AnyDR 0035〜0038を記録（コミット 6828338 ）。CLAUDE.mdのShipatonセクションも同時更新。
-   - `0035`: レンダリングパイプライン優先の例外（Issue #13より#5〜#7を先に）。
-   - `0036`: 課金導線をB案/C案に一本化、AnyDR 0030（BYOKハイブリッド+トライアル）を置き換え。
-   - `0037`: OSS戦略を「三層防御」（型システム／AIレビュー／標準装備テストハーネス）に拡張。
-     DroidKaigi/conference-app着想。AnyDR 0031/0032はそれぞれ層1・層2として存続。
-   - `0038`: OSSライセンスをMITに決定。
-4. GitHub反映作業一式を実施:
-   - `LICENSE`ファイル（MIT）を追加（コミット d7ecf87 ）。
-   - [Issue #17](https://github.com/ItisNoMatter/SmilesStudio/issues/17)の本文をB案/C案の内容に
-     更新（トライアル関連の記述を削除）。
-   - 新規子Issue [#22「標準装備のテストハーネス最小プロトタイプの実装」](https://github.com/ItisNoMatter/SmilesStudio/issues/22)
-     をマップIssue #11に追加。`blocked_by` #17、#18（Playストア申請）は#22にも`blocked_by`。
-   - マップIssue #1・#11双方の本文（Decisions-so-far・Fog）をAnyDR 0035〜0038に合わせて更新。
-5. プロジェクトメモリ`project_shipaton_2026_hackathon`を全面更新（優先順位リスト・課金モデル・
-   OSS戦略・レンダリングパイプライン例外を反映）。
+1. BuildInPublicツイート作成Skillの設計・実装（`/grill-with-docs`）:
+   - AnyDR 0039〜0044を記録（グローバル配置／英語版AnyDRは`docs/any-decision-record/en/`に格納・
+     欠番許容／明示的呼び出しのみ／英語のみ／ハッシュタグ`#Shipaton #BuildInPublic`はShipaton公式
+     ルールで確認済み／クリップボードへのベストエフォートコピー）。コミット c6b1043 。
+   - `~/.claude/skills/buildinpublic-tweet/SKILL.md`を実装（グローバル、このリポジトリには
+     含まれない）。SmileStudio側CLAUDE.mdにツイート運用規約セクションを追記。
+2. `/buildinpublic-tweet 0028`で実際にツイート文を試作。
+   - `docs/any-decision-record/en/0028-handdrawn-structure-recognition-mvp.md`をオンデマンド生成
+     （コミット 13427e8 ）。
+   - 最初のドラフトが280字制限に対して余裕があったにもかかわらず、電報調の断片的な文章になり
+     「なぜその決定をしたか」が本文から失われ`link`任せになっていたとユーザーから指摘。自然な
+     文章を優先するようSKILL.md（STEP 4）を修正し、個人メモリ`feedback_dont_overcompress_for_char_limits`
+     にも記録。
+3. Issue #5（core-smiles: 2Dレイアウト計算）を`/grill-with-docs`で設計:
+   - AnyDR 0045: `computeLayout(molecule): Map<AtomId, Point2D>`を独立関数として実装（`Molecule`の
+     プロパティにはしない。レイアウトは構造そのものでなく「描画のための一つの解釈」のため）。
+   - AnyDR 0046: 鎖状部分はジグザグ配置（結合角を交互に反転）。
+   - AnyDR 0047: 分岐点は対称なY字分岐（入ってきた結合を基準に±120度）。`Bond`に由来を示す
+     フラグを追加する複雑さを避けるため。
+   - TDDで実装（`Point2D.kt`・`Layout.kt`・`LayoutTest.kt`新規）。環（`Molecule.rings`）は正多角形、
+     置換基は環の中心から外向きに配置。テストは正確な座標一致ではなく結合長・角度を許容誤差付きで
+     検証する方式にし、この方式のおかげで「環の置換基が外向きでなく真横に配置される」バグを
+     実装中に発見・修正できた（`placeOutgoing`の±120度オフセットをそのまま流用していたのが原因）。
+   - コミット 899571e 。Issue #5にコメント＋クローズ、マップIssue #1を更新。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
-- `0001`〜`0027`: 前回までに反映済み。`0027`（android-app追加）は実装済み（Issue #12）。
-- `0028`（手描き構造式パースMVP）: **未実装**（Issue #14, #15）。
-- `0029`（Gemini採用、Koogマルチプロバイダ維持）: **未実装**（Issue #14）。
-- `0030`: **AnyDR 0036により置き換え済み**（BYOKハイブリッド+トライアルは廃止）。
-- `0031`（型システムをOSS安全網に）: 既存の型設計にすでに体現。AnyDR 0037で三層防御の層1に位置づけ。
-- `0032`（AIレビューCI、低優先度）: **未実装**（Issue #20）。AnyDR 0037で三層防御の層2に位置づけ。
-- `0033`（Shipatonは別マップIssue #11で管理）: **実装済み**。
-- `0034`（Issue #11をIssue #1より優先）: **実装済み**（運用ルールとして適用中）。ただし0035で例外あり。
-- `0035`（Issue #1の#5〜#7をIssue #13より先に着手）: **決定のみ、実装（#5〜#7自体）は未着手**。
-- `0036`（課金B案/C案、トライアル廃止）: **未実装**（Issue #16, #17。#17本文は更新済み）。
-- `0037`（三層防御OSS戦略、テストハーネス層追加）: **未実装**（新規Issue #22。層1は既存コードで体現済み）。
-- `0038`（OSSライセンスMIT）: **実装済み**（`LICENSE`ファイル追加、コミット d7ecf87 ）。
+- `0001`〜`0038`: 前回までに反映済み（詳細は割愛）。
+- `0039`〜`0044`（BuildInPublicツイート作成Skillの設計）: **実装済み**（グローバルSkill、
+  コミット c6b1043 ）。
+- `0045`〜`0047`（2Dレイアウト計算の設計）: **実装済み**（Issue #5、コミット 899571e ）。
+- `0048`・`0049`: このセッションでは未確認・未着手（上記「注意」参照、別セッションの可能性）。
 
 ## 現在のプロジェクト構成
 
-コードは前回セッション（Issue #12完了時点）から変更なし。今回はドキュメント・GitHub Issue・
-`LICENSE`ファイルのみ変更。詳細は1つ前のWIPメモ版、または各モジュールを直接確認。
-
 ```
-LICENSE                      【新規】MITライセンス全文
-docs/any-decision-record/    0001〜0038
-CONTEXT.md                   5用語。変更なし
+core-smiles/src/commonMain/kotlin/com/smilestudio/core/
+  Point2D.kt         【新規】data class(x, y) + plus/minus/times演算子
+  Layout.kt          【新規】fun computeLayout(molecule): Map<AtomId, Point2D>
+                     鎖=ジグザグ(120度交互反転)、分岐=Y字(±120度対称)、環=正多角形+置換基は外向き
+  （Ring.kt, Molecule.kt等、Issue #4完了時点から変更なし）
+core-smiles/src/commonTest/kotlin/com/smilestudio/core/
+  LayoutTest.kt       【新規】7件。結合長・角度を許容誤差付きで検証（厳密な座標一致ではない）
+
+docs/any-decision-record/  0001〜0047（0048・0049は別セッション作成、内容未確認）
+                            en/0028-handdrawn-structure-recognition-mvp.md（オンデマンド生成済み）
+~/.claude/skills/buildinpublic-tweet/SKILL.md  【新規、グローバル】このリポジトリには含まれない
+
 GitHub Issues（2マップ体制、Issue #11優先＋#5〜#7例外）:
-  Issue #1  マップ「SmilesStudio v1: 最小構成でのユーザーリリース」（デスクトップ）
-    #2,#3,#4 クローズ済み。フロンティア: #5「2Dレイアウト計算」
-    【AnyDR 0035によりIssue #13より先に着手する例外あり】
-  Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（優先中、子Issue11件に増加）
+  Issue #1  マップ「SmilesStudio v1: 最小構成でのユーザーリリース」
+    #2,#3,#4,#5 クローズ済み。フロンティア: #6「芳香族結合のKekulize変換」
+  Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（優先中、子Issue11件）
     #12 クローズ済み。フロンティア: #14「Koog SDK導入とVision LLM呼び出し」
-    （#13は#5〜#7完了待ちで実質保留）
-    #17本文はB案/C案に更新済み。#22「標準装備のテストハーネス最小プロトタイプ」を新規追加
-    （blocked_by #17、#18は#22にもblocked_by）
+    （#13は#5〜#7完了待ちで実質保留、#6・#7が残っている）
 .git/hooks/pre-commit       コミットSHA表記チェック用の非ブロッキング警告（リポジトリ追跡外）
 ```
 
 ## ⚠️ コードと決定のズレ
 
+- デスクトップ側（Issue #1）: `0020`（Kekulé描画）→Issue #6（未実装）。`0017`実描画・SMILES入力欄
+  →Issue #7, #8（未実装）。`0021`パッケージング→Issue #9。`0023`CI→Issue #10。
 - Shipaton側（Issue #11）: `0028`・`0029`（Koog連携）→Issue #14。`0036`（B/C課金）→Issue #16,
   #17。`0037`のテストハーネス層→Issue #22。いずれも未実装。
-- デスクトップ側（Issue #1）: `0019`後半（レイアウト計算本体）以降がすべて未実装（Issue #5〜#10）。
-  AnyDR 0035により、この中でも#5→#6→#7を最優先で着手する必要がある
-  （Issue #11の#15がクロスマップで#7にblocked_byしているため）。
 
 ## 既知の注意点（未対応・要フォローアップ）
 
 1. `compose.runtime`等のバージョンカタログ経由アクセサが非推奨警告（優先度低、未着手）。
 2. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
-3. `Molecule.rings`のDFS背後辺方式は縮合環・橋かけ環を正しく扱えない（AnyDR 0026）。
-4. 有料プランの具体的価格（月額300〜500円等）・ユーザーごとの使用上限（レート制限）は
-   いずれも未決定のまま（OSSライセンスは0038で決定済み、これは除く）。
-5. このマシンのAndroid SDKは`cmdline-tools`を手動追加済み。AVD`SmileStudio_Test`
+3. `Molecule.rings`のDFS背後辺方式・`computeLayout`の固定角度配置は、いずれも縮合環・橋かけ環を
+   正しく扱えない（AnyDR 0026・0019）。v1スコープでは問題ない。
+4. `computeLayout`の3方向以上の分岐（3+outgoing）・環の2箇所以上の置換基は、フォールバック実装
+   のみでテストカバレッジがない（v1文法スコープでは基本的に発生しない想定）。
+5. 有料プランの具体的価格・使用上限（レート制限）は未決定のまま。
+6. このマシンのAndroid SDKは`cmdline-tools`を手動追加済み。AVD`SmileStudio_Test`
    （API 36, Pixel 6）が1件作成済み。
 
 ## 次にやりそうなこと（未着手）
 
-- **最優先候補**: [Issue #5「core-smiles: 2Dレイアウト計算」](https://github.com/ItisNoMatter/SmilesStudio/issues/5)
-  （AnyDR 0035により、Issue #11の#15が依存するレンダリングパイプラインの最初のステップ）。
+- **Issue #6「core-smiles: 芳香族結合のKekulize変換」**（Issue #5完了により依存解消。AnyDR 0035の
+  レンダリングパイプライン優先順序の次のステップ）。
 - 並行して着手可能: [Issue #14「Koog SDK導入とVision LLM呼び出し」](https://github.com/ItisNoMatter/SmilesStudio/issues/14)
-  （依存なし、独立して進められる）。
+  （依存なし）。
 - どちらから着手するかはユーザー指示待ち。
+- 未コミットの`CLAUDE.md`変更・AnyDR 0048/0049の扱いをユーザーに確認する。
 - Play Store申請は2026-09-20頃を目標（審査バッファ）。
