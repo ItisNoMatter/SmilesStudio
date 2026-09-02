@@ -26,3 +26,4 @@ rootProject.name = "SmileStudio"
 include(":core-smiles")
 include(":ui-compose")
 include(":desktop-app")
+include(":android-app")
