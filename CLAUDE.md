@@ -1,7 +1,22 @@
 # SmilesStudio Project Context
 
 このプロジェクトは、化学徒向けのSMILES記法エディタ＆構造式描画ツールです。
-Kotlin Multiplatform (KMP) と Compose for Desktop を使用して開発しています。
+Kotlin Multiplatform (KMP) を使用して開発しており、Compose for Desktop（既存）と
+Android（Shipaton 2026ハッカソン対応、`android-app`モジュール追加）の両方をターゲットにします。
+
+## Shipaton 2026対応（現在の最優先事項）
+RevenueCat主催のモバイルアプリハッカソン（2026/8/1〜9/30）に参加中。詳細な方針は
+`docs/any-decision-record/0027`〜`0032`を参照。要点:
+*   Android対応が最優先（`android-app`モジュール追加）。iOS対応は優先度低。
+*   手描き構造式画像 → Koog経由のVision LLM → SMILES変換 → 再描画、というMVP機能を実装する
+    （画像1枚→SMILES候補1つ→再描画のみ。詳細は0028）。
+*   Vision LLMは開発・デモ用にGemini APIをデフォルト採用しつつ、KoogのマルチプロバイダBYOKは
+    維持する（0029）。
+*   課金はBYOKハイブリッドモデル（無料=自分のAPIキーで無制限、有料=アプリ提供のキーで
+    キー設定不要、RevenueCat SDKで1週間トライアル→サブスク）を採用する（0030）。ダーク
+    パターンは不採用。
+*   型システムをAI支援コントリビューションの安全網とするOSS戦略を採用し、FIR/K2プラグインは
+    将来構想として先送りする（0031）。
 
 ## 開発ルール・制約
 *   **言語 & ビルド:** Kotlin (最新安定版) / Gradle Kotlin DSL (`.kts`) を使用すること。
@@ -9,7 +24,8 @@ Kotlin Multiplatform (KMP) と Compose for Desktop を使用して開発して�
     *   `core-smiles`: ピュアKotlin。SMILESのパースと化学モデル（ドメインロジック）。UIやAndroid固有の依存を持たないこと。
     *   `ui-compose`: Compose Multiplatform。`core-smiles`に依存し、Canvas描画を担当。
     *   `desktop-app`: Compose for Desktop アプリケーションエントリポイント。
-*   **AI連携 (Koog):** 将来的にJetBrains Koogを利用したマルチモーダル画像認識（手描き構造式 -> SMILES）を導入予定。
+    *   `android-app`: Androidアプリケーションエントリポイント（Shipaton 2026対応で追加、`core-smiles`/`ui-compose`を再利用）。
+*   **AI連携 (Koog):** Shipaton 2026のMVPスコープとしてJetBrains Koogによるマルチモーダル画像認識（手描き構造式 -> SMILES）を実装する。詳細は`docs/any-decision-record/0028`・`0029`。
 
 ## アーキテクチャと意思決定（トレードオフの提示）
 あなたは優秀なシニアエンジニアであり、私の設計のスパーリングパートナーです。
