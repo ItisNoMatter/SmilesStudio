@@ -78,12 +78,12 @@ GitHub Issues（2マップ体制）:
 
 ## 次にやりそうなこと（未着手）
 
-- **2つのフロンティアが並行して存在**: デスクトップ側は
-  [Issue #5「2Dレイアウト計算」](https://github.com/ItisNoMatter/SmilesStudio/issues/5)、
-  Shipaton側は
-  [Issue #12「android-appモジュールの追加」](https://github.com/ItisNoMatter/SmilesStudio/issues/12)
-  と
+- **Issue #11（Shipaton 2026対応）の子Issueを優先する**（[AnyDR 0034](https://github.com/ItisNoMatter/SmilesStudio/blob/main/docs/any-decision-record/0034-prioritize-shipaton-map-over-desktop-v1.md)、2026-09-03決定）。
+  デスクトップ側ロードマップ（Issue #1、フロンティアは
+  [Issue #5「2Dレイアウト計算」](https://github.com/ItisNoMatter/SmilesStudio/issues/5)）は
+  一時停止。
+- 次の着手先はShipaton側のフロンティア2件のいずれか:
+  [Issue #12「android-appモジュールの追加」](https://github.com/ItisNoMatter/SmilesStudio/issues/12)、
   [Issue #14「Koog SDK導入とVision LLM呼び出し」](https://github.com/ItisNoMatter/SmilesStudio/issues/14)。
-  ユーザーの優先順位（プロジェクトメモリ`project_shipaton_2026_hackathon`参照）はShipaton側が
-  最優先。どちらから着手するかはユーザー指示待ち。
+  どちらから着手するかはユーザー指示待ち。
 - Play Store申請は2026-09-20頃を目標（審査バッファ）。
