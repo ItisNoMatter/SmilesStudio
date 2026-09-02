@@ -5,113 +5,85 @@
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: Issue #4（Ring検出）実装・クローズ済み。次はIssue #5（2Dレイアウト計算）
+## ステータス: Shipaton 2026対応の方針決定・Issue化が完了。2つの独立したロードマップが並行稼働中
 
-前回セッションでIssue #3（芳香族小文字表記）を実装（コミット 147de49 ）。今回セッションは
-Wayfinderの唯一のフロンティアだった
-[Issue #4](https://github.com/ItisNoMatter/SmilesStudio/issues/4)
-（core-smiles: Ring検出アルゴリズムの実装）をTDDで実装し、コミット f7bc955 としてpush済み。
-Issue #4はコメント＋クローズ済み、マップIssue #1のチェックリストも更新済み。
+前回セッションでIssue #4（Ring検出）を実装しクローズ（コミット f7bc955 ）。今回セッションは、
+セッション外でユーザーが決定したShipaton 2026（RevenueCatハッカソン、締切2026-09-30）参加方針を
+AnyDR化し、Wayfinder方式で新しいマップIssue #11を作成した。**コード変更はなし**（ドキュメント・
+GitHub Issueのみ）。デスクトップv1ロードマップ（Issue #1）とShipatonロードマップ（Issue #11）が
+別々のマップとして並行稼働している点に注意。
 
 ## 直近セッションでやったこと（2026-09-02）
 
-1. Issue #4着手前にCLAUDE.mdの方針に従い結果表現の選択肢を提示（Ring検出結果を専用の値型
-   `Ring(atoms: List<AtomId>)`で表現 vs 生の`List<List<AtomId>>`を直接返す）。ユーザーは
-   前者（専用型）を選択し、AnyDR 0026として記録。
-2. TDDで実装（Red→Green、`./gradlew allTests`・`./gradlew build`ともにグリーン確認済み）。
-   - `Ring.kt`【新規】: `data class Ring(val atoms: List<AtomId>)`。
-   - `Molecule.kt`: `rings: List<Ring>`を`by lazy`の派生プロパティとして追加。結合グラフに
-     対するDFSで背後辺（back edge）を検出し、1本の背後辺につき1つの環を`parent`マップから
-     逆再構成する方式。v1スコープ（AnyDR 0018/0019、単環・非縮合環）では十分だが、縮合環に
-     対応する場合は本格的なSSSRアルゴリズムへの再訪が必要（AnyDR 0026に明記）。
-   - `MoleculeTest.kt`: 直鎖・分岐（環なし）でringsが空になること、3員環・6員環で環を一周する
-     原子の並び順が正しく返ることのテストを追加。
-3. GitHub側: Issue #4にコメント＋クローズ、マップIssue #1のChildrenチェックリストと
-   Decisions-so-farを更新（AnyDR 0026・コミット f7bc955 へのリンクを追加）。
-4. コミット 147de49 ・ f7bc955 とも`origin/main`にpush済み。
+1. ユーザーがセッション外で決定したShipaton 2026対応方針（Android対応、Koog手描き構造式認識、
+   BYOKハイブリッド課金、型安全OSS戦略等）をヒアリングし、懸念点を確認：
+   - CLAUDE.mdの更新タイミング → 今回あわせて更新することで合意
+   - 有料プランのAPIコスト上限（レート制限なし） → MVPとしてリスク受入で合意
+   - OSSライセンス・具体的な価格帯は「未決定」として、AnyDR化せず未決定事項のまま記録
+2. AnyDR 0027〜0032を記録（android-app追加／手描き認識MVP／Gemini採用／BYOKハイブリッド課金／
+   型システムのOSS安全網戦略・FIR/K2先送り／AIレビューCI低優先度）。CLAUDE.mdも同時に更新
+   （Android対応・Koog近日実装・課金方針を追記）。コミット c2475b7 。
+3. Issue化の方法について選択肢を提示（既存マップIssue #1に追加 vs 新しい別マップ）。ユーザーは
+   別マップを選択し、AnyDR 0033として記録（コミット a6d5c19 ）。
+4. Wayfinderマップ [Issue #11「SmilesStudio: Shipaton 2026対応」](https://github.com/ItisNoMatter/SmilesStudio/issues/11) + 子Issue10件（#12〜#21）を作成。依存関係は
+   #12(android-app追加)→#13(ui-composeモバイル調整)、#14(Koog+Gemini+BYOK呼び出し)は独立、
+   #15(手描き認識UI)は#13・#14に加えて**クロスマップで既存Issue #7（MoleculeCanvas描画実装）にも
+   blocked_by**、#16(BYOK設定画面)→#17(RevenueCat課金)→#18(Playストア申請)→#19(Devpost提出)、
+   #20(AIレビューCI低優先度)・#21(iOS/年額プラン低優先度)は#15・#17完了後。
+   現在のフロンティア（依存なし）は**#12・#14の2つ**。
+5. マップIssue #1のFogセクションに、Shipaton方針転換とIssue #11への参照を追記。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
-- `0001`〜`0016`: 前回までに反映済み。コード上も反映済み。
-- `0017`（テキスト入力+読み取り専用描画）・`0020`〜`0023`（Kekulé描画/配布/Issue構成/CI）:
-  **未実装**。対応するIssue（#6〜#10）着手時にコードへ反映する。
-- `0018`（環閉包＋芳香族小文字表記までのv1文法スコープ）: **実装済み**（Issue #2・#3）。
-- `0019`（固定角度配置レイアウト）: **一部の前提（Ring検出）のみ実装済み**。座標計算本体は
-  Issue #5で未着手。
-- `0024`（Issue #2は環閉包ラベルは番号のみ対応）: **実装済み**（コミット 0f2cfbd ）。
-- `0025`（Issue #3は芳香族小文字表記用に別トークン型を新設）: **実装済み**（コミット 147de49 ）。
-- `0026`（Issue #4はRing検出結果を専用の値型`Ring`で表現、DFS背後辺方式）: **実装済み**
-  （コミット f7bc955 ）。
+- `0001`〜`0026`: 前回までに反映済み（詳細は割愛）。
+- `0027`（android-app追加、iOS後回し）: **未実装**（Issue #12）。
+- `0028`（手描き構造式パースMVP、既存テキスト入力パイプライン再利用）: **未実装**（Issue #14, #15）。
+- `0029`（Gemini採用、Koogマルチプロバイダ維持）: **未実装**（Issue #14）。
+- `0030`（BYOKハイブリッド課金、RevenueCat、コスト上限は未設計のまま受入）: **未実装**（Issue #16, #17）。
+- `0031`（型システムをOSS安全網に、FIR/K2は将来構想）: 既存の型設計（0001/0003/0025/0026）に
+  すでに体現されている。新規実装作業は発生しない。
+- `0032`（AIレビューCI、低優先度）: **未実装**（Issue #20）。
+- `0033`（Shipatonは別マップIssue #11で管理）: **実装済み**（Issue #11作成・運用中）。
 
 ## 現在のプロジェクト構成
 
+コードは前回セッション（Issue #4完了時点）から変更なし。詳細は1つ前のWIPメモ版を参照、または
+`core-smiles/src/commonMain/kotlin/com/smilestudio/core/`を直接確認。
+
 ```
-settings.gradle.kts        # include(:core-smiles, :ui-compose, :desktop-app)
-build.gradle.kts           # ルート: 各プラグインをapply falseで宣言
-gradle/libs.versions.toml  # kotlin=2.2.10, composeMultiplatform=1.12.0
-
-core-smiles/                          # kotlin(multiplatform), jvm()ターゲットのみ
-  build.gradle.kts
-  src/commonMain/kotlin/com/smilestudio/core/
-    Element.kt (enum, 有機化学でよく使う元素のサブセット: H,C,N,O,F,P,S,Cl,Br,I。Bなし)
-    AtomId.kt (@JvmInline value class)
-    HydrogenCount.kt   sealed interface { Implicit, Explicit(count) }
-    ParseResult.kt     sealed class { Success(Molecule), Failure(reason: String) }
-    Atom.kt    (element, charge, isotope, hydrogenCount: HydrogenCount)
-    BondType.kt (SINGLE/DOUBLE/TRIPLE/AROMATIC) / Bond.kt
-    Ring.kt            【新規】data class Ring(val atoms: List<AtomId>)
-    Molecule.kt        isAromatic(atomId)・rings: List<Ring>。bondsByAtom/aromaticAtomIds/rings
-                       をby lazyでキャッシュ。rings はDFS背後辺検出（1背後辺=1環、縮合環は未対応）
-    Token.kt           sealed interface { AtomSymbol, AromaticAtomSymbol, BondSymbol,
-                        RingClosure(label), LParen, RParen }
-    PositionedToken.kt data class(token, position: Int)
-    TokenizeResult.kt  sealed class { Success(tokens), Failure(reason) }
-    Tokenizer.kt       文字列→PositionedTokenリスト。環閉包・芳香族小文字（c,n,o,p,s）は
-                       トークン化済み。b（芳香族ホウ素）・角括弧は引き続き専用理由で拒否
-    SmilesParser.kt    parse()はTokenizer+再帰下降で直鎖+分岐+環閉包+芳香族のMoleculeを構築。
-                       結合種別省略時は両端が芳香族小文字表記ならAROMATIC、それ以外はSINGLE
-  src/commonTest/kotlin/com/smilestudio/core/
-    MoleculeTest.kt (11件、日本語メソッド名、グリーン。ring検出のテストを追加)
-    TokenizerTest.kt (13件、グリーン)
-    SmilesParserTest.kt (21件、グリーン)
-
-ui-compose/                           # kotlin(multiplatform) + Compose Multiplatform（変更なし）
-  build.gradle.kts
-  src/commonMain/kotlin/com/smilestudio/ui/MoleculeCanvas.kt (空のCanvas、TODOのみ)
-
-desktop-app/                          # kotlin(jvm) + compose.desktop.application（変更なし）
-  build.gradle.kts
-  src/main/kotlin/Main.kt (ウィンドウを開いて空のMoleculeCanvasを表示するのみ)
-
-docs/any-decision-record/  0001〜0026
-CONTEXT.md                 5用語（Implicit/Explicit Hydrogen Count, Aromatic Atom, Aromatic Bond, Ring, AtomId）。変更なし
-GitHub Issues               #1(map) + #5〜#10(未着手、Wayfinder方式)。#2・#3・#4はクローズ済み
+docs/any-decision-record/  0001〜0033
+CONTEXT.md                 5用語。変更なし
+GitHub Issues（2マップ体制）:
+  Issue #1  マップ「SmilesStudio v1: 最小構成でのユーザーリリース」（デスクトップ）
+    #2,#3,#4 クローズ済み。フロンティア: #5「2Dレイアウト計算」
+  Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（モバイル・Koog・課金）【新規】
+    フロンティア: #12「android-appモジュールの追加」、#14「Koog SDK導入とVision LLM呼び出し」
 .git/hooks/pre-commit       コミットSHA表記チェック用の非ブロッキング警告（リポジトリ追跡外）
 ```
 
 ## ⚠️ コードと決定のズレ
 
-- `0019`（固定角度配置レイアウト、座標計算本体）→ Issue #5。Ring検出は済んでいるが座標計算は未着手。
-- `0020`（Kekulé描画）→ Issue #6。
-- `0017`（テキスト入力+描画）・実際のCanvas描画 → Issue #7, #8。`MoleculeCanvas`は空、
-  `desktop-app`にSMILES入力欄は存在しない。
-- `0021`（Windows向けパッケージング）→ Issue #9。
-- `0023`（GitHub Actions自動リリース）→ Issue #10。
+- デスクトップ側（Issue #1）: `0019`後半（レイアウト計算本体）→ Issue #5。`0020`（Kekulé描画）
+  → Issue #6。`0017`実描画・SMILES入力欄 → Issue #7, #8。`0021`パッケージング → Issue #9。
+  `0023`CI → Issue #10。
+- Shipaton側（Issue #11）: `0027`〜`0032`はすべて未実装（対応するIssue #12〜#21参照）。
 
 ## 既知の注意点（未対応・要フォローアップ）
 
-1. `compose.runtime`等のバージョンカタログ経由アクセサがCompose Multiplatform 1.12.0で
-   非推奨警告になっている。ビルドは通るが警告あり（優先度低、未着手）。
-2. `Element`の元素セットは有機化学サブセット10種（H,C,N,O,F,P,S,Cl,Br,I）で仮実装。芳香族小文字
-   の`b`（ホウ素）はこのため未対応のまま。
-3. `Molecule.rings`のDFS背後辺方式は縮合環・橋かけ環を正しく扱えない（AnyDR 0026）。v1スコープ
-   では問題ないが、将来スコープを広げる際は要再検討。
+1. `compose.runtime`等のバージョンカタログ経由アクセサが非推奨警告（優先度低、未着手）。
+2. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
+3. `Molecule.rings`のDFS背後辺方式は縮合環・橋かけ環を正しく扱えない（AnyDR 0026）。
+4. OSSライセンス（MIT/Apache 2.0）・有料プランの具体的価格・有料プランの使用上限（レート制限）は
+   いずれも未決定のまま。決まり次第AnyDR化する。
 
 ## 次にやりそうなこと（未着手）
 
-- **Issue #5「core-smiles: 2Dレイアウト計算（固定角度配置アルゴリズム）」から着手**（Issue #4
-  完了により依存が解消され、現在の唯一のフロンティアIssue）。`Molecule.rings`を使って環を正多角形
-  として配置するロジックを実装する。TDDで進め、`./gradlew allTests`のグリーンを確認する。
-- 以降はIssue依存関係の順（#5→#6→#7→#8→#9→#10）に沿って進める。
-- Koog連携・グラフィカルな構造エディタ（AnyDR 0017で保留したアプローチB）は、v1リリース後の
-  将来タスク。
+- **2つのフロンティアが並行して存在**: デスクトップ側は
+  [Issue #5「2Dレイアウト計算」](https://github.com/ItisNoMatter/SmilesStudio/issues/5)、
+  Shipaton側は
+  [Issue #12「android-appモジュールの追加」](https://github.com/ItisNoMatter/SmilesStudio/issues/12)
+  と
+  [Issue #14「Koog SDK導入とVision LLM呼び出し」](https://github.com/ItisNoMatter/SmilesStudio/issues/14)。
+  ユーザーの優先順位（プロジェクトメモリ`project_shipaton_2026_hackathon`参照）はShipaton側が
+  最優先。どちらから着手するかはユーザー指示待ち。
+- Play Store申請は2026-09-20頃を目標（審査バッファ）。
