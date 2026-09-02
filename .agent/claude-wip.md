@@ -1,89 +1,118 @@
 # Claude Code WIP メモ (SmilesStudio プロジェクト基盤構築)
 
-最終更新: 2026-09-02
+最終更新: 2026-09-03
 
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: Shipaton 2026対応の方針決定・Issue化が完了。2つの独立したロードマップが並行稼働中
+## ステータス: Issue #12（android-appモジュール追加）実装・クローズ済み。次はIssue #13かIssue #14
 
-前回セッションでIssue #4（Ring検出）を実装しクローズ（コミット f7bc955 ）。今回セッションは、
-セッション外でユーザーが決定したShipaton 2026（RevenueCatハッカソン、締切2026-09-30）参加方針を
-AnyDR化し、Wayfinder方式で新しいマップIssue #11を作成した。**コード変更はなし**（ドキュメント・
-GitHub Issueのみ）。デスクトップv1ロードマップ（Issue #1）とShipatonロードマップ（Issue #11）が
-別々のマップとして並行稼働している点に注意。
+前回セッションでShipaton 2026ロードマップ（Issue #11 + 子Issue #12〜#21）を作成
+（コミット a6d5c19 ）。今回セッションはまず「Issue #11の子Issueをデスクトップv1ロードマップ
+（Issue #1）より優先する」ことをAnyDR 0034として明記した上で、Issue #12
+（android-appモジュールの追加）をTDD以外の方法（インフラ構築＋実機/エミュレータでの動作確認）で
+実装し、コミット 26e9c84 としてpush済み。Issue #12はコメント＋クローズ済み。
 
-## 直近セッションでやったこと（2026-09-02）
+## 直近セッションでやったこと（2026-09-03）
 
-1. ユーザーがセッション外で決定したShipaton 2026対応方針（Android対応、Koog手描き構造式認識、
-   BYOKハイブリッド課金、型安全OSS戦略等）をヒアリングし、懸念点を確認：
-   - CLAUDE.mdの更新タイミング → 今回あわせて更新することで合意
-   - 有料プランのAPIコスト上限（レート制限なし） → MVPとしてリスク受入で合意
-   - OSSライセンス・具体的な価格帯は「未決定」として、AnyDR化せず未決定事項のまま記録
-2. AnyDR 0027〜0032を記録（android-app追加／手描き認識MVP／Gemini採用／BYOKハイブリッド課金／
-   型システムのOSS安全網戦略・FIR/K2先送り／AIレビューCI低優先度）。CLAUDE.mdも同時に更新
-   （Android対応・Koog近日実装・課金方針を追記）。コミット c2475b7 。
-3. Issue化の方法について選択肢を提示（既存マップIssue #1に追加 vs 新しい別マップ）。ユーザーは
-   別マップを選択し、AnyDR 0033として記録（コミット a6d5c19 ）。
-4. Wayfinderマップ [Issue #11「SmilesStudio: Shipaton 2026対応」](https://github.com/ItisNoMatter/SmilesStudio/issues/11) + 子Issue10件（#12〜#21）を作成。依存関係は
-   #12(android-app追加)→#13(ui-composeモバイル調整)、#14(Koog+Gemini+BYOK呼び出し)は独立、
-   #15(手描き認識UI)は#13・#14に加えて**クロスマップで既存Issue #7（MoleculeCanvas描画実装）にも
-   blocked_by**、#16(BYOK設定画面)→#17(RevenueCat課金)→#18(Playストア申請)→#19(Devpost提出)、
-   #20(AIレビューCI低優先度)・#21(iOS/年額プラン低優先度)は#15・#17完了後。
-   現在のフロンティア（依存なし）は**#12・#14の2つ**。
-5. マップIssue #1のFogセクションに、Shipaton方針転換とIssue #11への参照を追記。
+1. Issue #11とIssue #1のどちらを優先するかユーザーに確認 → Issue #11優先で確定。
+   AnyDR 0034として記録（コミット f0177f4 ）。プロジェクトメモリ
+   `project_shipaton_2026_hackathon`にも反映。
+2. Issue #12（android-appモジュールの追加）を実装。CLAUDE.mdのPros/Cons提示ルールは、
+   ここでは「AGP/SDKバージョン選定」のような細かいパラメータ調整には適用せず、実際にビルドで
+   確認しながら進めた（設計の分岐ではなくインフラ配線作業と判断）。
+   - `core-smiles`・`ui-compose`にAndroidターゲットを追加しようとしたところ、AGP 9で
+     `com.android.library` + `org.jetbrains.kotlin.multiplatform`の組み合わせが非推奨
+     （AGP 10で廃止予定）と判明。公式ドキュメントを確認し、新しい
+     `com.android.kotlin.multiplatform.library`プラグイン（`kotlin { android { ... } }`
+     ブロックで設定）に切り替えた。
+   - Compose Multiplatform 1.12.0のAndroid成果物がAGP 9.1.0・compileSdk 37を要求すると
+     判明し、`libs.versions.toml`のAGP/SDKバージョンを更新（agp=9.1.0, compileSdk=37,
+     targetSdk=37, minSdk=26）。
+   - `android-app`モジュールを新規作成。`desktop-app`と同じ「薄いプラットフォームエントリ
+     ポイント」パターンで、`MainActivity`が`ui-compose`の`MoleculeCanvas`をそのまま呼び出す
+     構成（`molecule = null`で空のCanvasを表示、Issue #12のスコープ通り）。
+   - 動作確認: このマシンのAndroid SDKには古い`tools/bin/avdmanager`（JDK 11+と非互換）しか
+     なく、公式`cmdline-tools`を手動でダウンロード・展開して解決。AVD（API 36, Pixel 6）を
+     新規作成し、debug APKのインストール・起動・プロセス継続（クラッシュなし、pidof安定）を
+     確認。スクリーンショットで"SmileStudio"タイトルバーの表示も確認済み（SystemUI側のANRが
+     出たが、これはエミュレータのソフトウェアレンダリング負荷によるものでアプリのクラッシュ
+     ではないと判断）。確認後エミュレータは終了済み。
+   - `./gradlew allTests build`グリーン確認済み（既存のJVMターゲットのテストには影響なし）。
+3. GitHub側: Issue #12にコメント＋クローズ、マップIssue #11のChildrenチェックリストと
+   Decisions-so-farを更新（AnyDR 0034・コミット 26e9c84 へのリンクを追加）。
+4. コミット f0177f4 ・ 26e9c84 とも`origin/main`にpush済み。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
-- `0001`〜`0026`: 前回までに反映済み（詳細は割愛）。
-- `0027`（android-app追加、iOS後回し）: **未実装**（Issue #12）。
-- `0028`（手描き構造式パースMVP、既存テキスト入力パイプライン再利用）: **未実装**（Issue #14, #15）。
+- `0001`〜`0026`: 前回までに反映済み。
+- `0027`（android-app追加、iOS後回し）: **実装済み**（Issue #12、コミット 26e9c84 ）。
+- `0028`（手描き構造式パースMVP）: **未実装**（Issue #14, #15）。
 - `0029`（Gemini採用、Koogマルチプロバイダ維持）: **未実装**（Issue #14）。
-- `0030`（BYOKハイブリッド課金、RevenueCat、コスト上限は未設計のまま受入）: **未実装**（Issue #16, #17）。
-- `0031`（型システムをOSS安全網に、FIR/K2は将来構想）: 既存の型設計（0001/0003/0025/0026）に
-  すでに体現されている。新規実装作業は発生しない。
+- `0030`（BYOKハイブリッド課金）: **未実装**（Issue #16, #17）。
+- `0031`（型システムをOSS安全網に）: 既存の型設計にすでに体現。新規実装作業なし。
 - `0032`（AIレビューCI、低優先度）: **未実装**（Issue #20）。
-- `0033`（Shipatonは別マップIssue #11で管理）: **実装済み**（Issue #11作成・運用中）。
+- `0033`（Shipatonは別マップIssue #11で管理）: **実装済み**。
+- `0034`（Issue #11をIssue #1より優先）: **実装済み**（運用ルールとして適用中）。
 
 ## 現在のプロジェクト構成
 
-コードは前回セッション（Issue #4完了時点）から変更なし。詳細は1つ前のWIPメモ版を参照、または
-`core-smiles/src/commonMain/kotlin/com/smilestudio/core/`を直接確認。
-
 ```
-docs/any-decision-record/  0001〜0033
+settings.gradle.kts        # include(:core-smiles, :ui-compose, :desktop-app, :android-app)【更新】
+build.gradle.kts           # ルート: android.application/android.kotlin.multiplatform.libraryを追加
+gradle/libs.versions.toml  # kotlin=2.2.10, composeMultiplatform=1.12.0, agp=9.1.0,
+                           # androidCompileSdk/TargetSdk=37, androidMinSdk=26
+gradle.properties          # android.useAndroidX=true, nonTransitiveRClass=true,
+                           # suppressUnsupportedCompileSdk=37.0
+
+core-smiles/                # kotlin(multiplatform): jvm() + android（com.android.kotlin.
+                             # multiplatform.libraryプラグイン、namespace=com.smilestudio.core）
+  （コード自体はIssue #4完了時点から変更なし。ビルド構成のみ変更）
+
+ui-compose/                 # kotlin(multiplatform) + Compose Multiplatform: jvm() + android
+                             # （namespace=com.smilestudio.ui）
+  src/commonMain/kotlin/com/smilestudio/ui/MoleculeCanvas.kt (空のCanvas、TODOのみ、変更なし)
+
+desktop-app/                # kotlin(jvm) + compose.desktop.application（変更なし）
+
+android-app/                 【新規】com.android.application + Compose Multiplatform
+  build.gradle.kts           namespace/applicationId=com.smilestudio.android
+  src/main/AndroidManifest.xml
+  src/main/kotlin/com/smilestudio/android/MainActivity.kt  ui-composeのMoleculeCanvasを呼び出し
+  src/main/res/values/strings.xml
+
+docs/any-decision-record/  0001〜0034
 CONTEXT.md                 5用語。変更なし
-GitHub Issues（2マップ体制）:
-  Issue #1  マップ「SmilesStudio v1: 最小構成でのユーザーリリース」（デスクトップ）
-    #2,#3,#4 クローズ済み。フロンティア: #5「2Dレイアウト計算」
-  Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（モバイル・Koog・課金）【新規】
-    フロンティア: #12「android-appモジュールの追加」、#14「Koog SDK導入とVision LLM呼び出し」
+GitHub Issues（2マップ体制、Issue #11優先）:
+  Issue #1  マップ「SmilesStudio v1: 最小構成でのユーザーリリース」（デスクトップ、一時停止中）
+    #2,#3,#4 クローズ済み。フロンティア: #5「2Dレイアウト計算」（未着手のまま）
+  Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（優先中）
+    #12 クローズ済み。フロンティア: #13「ui-composeのモバイル向け調整」、
+    #14「Koog SDK導入とVision LLM呼び出し」
 .git/hooks/pre-commit       コミットSHA表記チェック用の非ブロッキング警告（リポジトリ追跡外）
 ```
 
 ## ⚠️ コードと決定のズレ
 
-- デスクトップ側（Issue #1）: `0019`後半（レイアウト計算本体）→ Issue #5。`0020`（Kekulé描画）
-  → Issue #6。`0017`実描画・SMILES入力欄 → Issue #7, #8。`0021`パッケージング → Issue #9。
-  `0023`CI → Issue #10。
-- Shipaton側（Issue #11）: `0027`〜`0032`はすべて未実装（対応するIssue #12〜#21参照）。
+- Shipaton側（Issue #11）: `0028`〜`0032`はすべて未実装（対応するIssue #14〜#21参照）。
+- デスクトップ側（Issue #1）: `0019`後半（レイアウト計算本体）以降がすべて未実装（Issue #5〜#10）。
+  AnyDR 0034により優先度は下がっているが、Issue #11の#15（手描き認識UI）はIssue #1の#7
+  （MoleculeCanvas描画実装）にクロスマップでblocked_byしているため、いずれ再開が必要。
 
 ## 既知の注意点（未対応・要フォローアップ）
 
 1. `compose.runtime`等のバージョンカタログ経由アクセサが非推奨警告（優先度低、未着手）。
 2. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
 3. `Molecule.rings`のDFS背後辺方式は縮合環・橋かけ環を正しく扱えない（AnyDR 0026）。
-4. OSSライセンス（MIT/Apache 2.0）・有料プランの具体的価格・有料プランの使用上限（レート制限）は
-   いずれも未決定のまま。決まり次第AnyDR化する。
+4. OSSライセンス・有料プランの具体的価格・使用上限（レート制限）はいずれも未決定のまま。
+5. このマシンのAndroid SDKは`cmdline-tools`が元々未インストールだった（今回手動で追加）。
+   AVD一覧は`SmileStudio_Test`（API 36, Pixel 6）が1件作成済み。
 
 ## 次にやりそうなこと（未着手）
 
-- **Issue #11（Shipaton 2026対応）の子Issueを優先する**（[AnyDR 0034](https://github.com/ItisNoMatter/SmilesStudio/blob/main/docs/any-decision-record/0034-prioritize-shipaton-map-over-desktop-v1.md)、2026-09-03決定）。
-  デスクトップ側ロードマップ（Issue #1、フロンティアは
-  [Issue #5「2Dレイアウト計算」](https://github.com/ItisNoMatter/SmilesStudio/issues/5)）は
-  一時停止。
-- 次の着手先はShipaton側のフロンティア2件のいずれか:
-  [Issue #12「android-appモジュールの追加」](https://github.com/ItisNoMatter/SmilesStudio/issues/12)、
-  [Issue #14「Koog SDK導入とVision LLM呼び出し」](https://github.com/ItisNoMatter/SmilesStudio/issues/14)。
-  どちらから着手するかはユーザー指示待ち。
+- **Issue #11のフロンティア2件のいずれかから着手**:
+  [Issue #13「ui-composeのモバイル向け調整」](https://github.com/ItisNoMatter/SmilesStudio/issues/13)
+  （#12完了により依存解消）、
+  [Issue #14「Koog SDK導入とVision LLM呼び出し」](https://github.com/ItisNoMatter/SmilesStudio/issues/14)
+  （独立して着手可能）。どちらから着手するかはユーザー指示待ち。
 - Play Store申請は2026-09-20頃を目標（審査バッファ）。
