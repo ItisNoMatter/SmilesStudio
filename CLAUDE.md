@@ -6,7 +6,7 @@ Android（Shipaton 2026ハッカソン対応、`android-app`モジュール追�
 
 ## Shipaton 2026対応（現在の最優先事項）
 RevenueCat主催のモバイルアプリハッカソン（2026/8/1〜9/30）に参加中。詳細な方針は
-`docs/any-decision-record/0027`〜`0044`を参照。要点:
+`docs/any-decision-record/0027`〜`0044`、`0048`〜`0049`を参照。要点:
 *   Android対応が最優先（`android-app`モジュール追加、実装済み）。iOS対応は優先度低。
 *   手描き構造式画像 → Koog経由のVision LLM → SMILES変換 → 再描画、というMVP機能を実装する
     （画像1枚→SMILES候補1つ→再描画のみ。詳細は0028）。
@@ -18,6 +18,13 @@ RevenueCat主催のモバイルアプリハッカソン（2026/8/1〜9/30）に�
 *   OSS戦略は「三層防御」構想（型システム・AIレビュー・標準装備の期待値テストハーネス）を
     採用する（0037、0031/0032を統合・拡張）。FIR/K2プラグインは将来構想として先送り。
 *   OSSライセンスはMITを採用する（0038）。
+*   受賞戦略はNext Gen Award（学生向け。ストア公開・有料開発者アカウント不要、OSSライセンス
+    付き公開リポジトリ＋デモ動画のみで応募可）＋ #BuildInPublic Awardの二枚看板に絞る。Kotlin賞
+    （JetBrains、iOS/Android両対応が要件）・グランプリ・Design賞・Peace賞は積極的には狙わない
+    （0048）。
+*   #BuildInPublic運用は、既存AnyDRバックログの遡及投稿（ログ発掘型）と、公開の場で設計判断を
+    問いかけ実際の反応を意思決定に反映するフィードバック実証型を主軸とする。他のShipaton参加者
+    との相互フォロー・返信などの互恵的関与は「余裕があれば」の扱い（0049）。
 
 ### BuildInPublicツイート運用（`/buildinpublic-tweet` Skillが参照）
 `docs/any-decision-record/`内の決定を`#BuildInPublicAward`向けにツイートする際の規約（0039〜0044）:
