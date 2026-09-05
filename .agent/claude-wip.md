@@ -1,110 +1,145 @@
 # Claude Code WIP メモ (SmilesStudio プロジェクト基盤構築)
 
-最終更新: 2026-09-03
+最終更新: 2026-09-06
 
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: Issue #5（2Dレイアウト計算）実装・クローズ済み。次はIssue #6かIssue #14
+## ステータス: 最小ビルドの核体験（テキスト入力→構造式描画）が実機確認済み。Issue #8のclose判断が最優先
 
-前回セッションでShipaton方針更新（課金B/C案・三層防御OSS戦略）をAnyDR 0035〜0038として記録
-（コミット 6828338 ・ d7ecf87 ）。今回セッションは3つの作業を行った。
-(1) BuildInPublicツイート作成Skill（`buildinpublic-tweet`、グローバル配置）を`/grill-with-docs`で
-設計・実装（AnyDR 0039〜0044）。
-(2) 実際にAnyDR 0028のツイートを試作し、Skill出力の品質フィードバック（文字数に余裕があっても
-自然な文章を優先すべき）をSKILL.mdと個人メモリに反映。
-(3) Issue #5（2Dレイアウト計算）を`/grill-with-docs`で設計しTDD実装、クローズ（AnyDR 0045〜0047、
-コミット 899571e ）。
+Shipatonロードマップの核となる「テキストでSMILESを入力すると構造式が描画される」体験が、
+Android・デスクトップ両方で実機（エミュレータ）確認済み。Issue #14（Koog SDK・Gemini Vision LLM
+連携）はclose済み。Issue #18（Android署名設定）はアプリ側の準備が完了し、Play Console側の
+手作業（アプリ登録・テスター確保）が残っている。
 
-**⚠️ 注意**: 作業ツリーに、このセッションが作成していない未コミットの変更がある
-（`CLAUDE.md`の受賞戦略・BuildInPublic運用に関する追記、`docs/any-decision-record/0048`・`0049`）。
-別セッションまたはユーザーによる作業と判断し、あえて触れていない。次セッションで状況を再確認し、
-必要なら経緯を確認してからコミットすること。
+**⚠️ 最優先で確認すること**: Issue #8「desktop-app: SMILES入力欄とパースエラー表示の実装」が
+GitHub上まだOPENのままだが、今セッションで実装した`MoleculeEditor`（desktop-app/android-app
+両方に配線済み）で実質的にスコープを満たしている。close判断がまだユーザーに確認されていない。
 
-## 直近セッションでやったこと（2026-09-03）
+## 直近セッションでやったこと（2026-09-03〜2026-09-06）
 
-1. BuildInPublicツイート作成Skillの設計・実装（`/grill-with-docs`）:
-   - AnyDR 0039〜0044を記録（グローバル配置／英語版AnyDRは`docs/any-decision-record/en/`に格納・
-     欠番許容／明示的呼び出しのみ／英語のみ／ハッシュタグ`#Shipaton #BuildInPublic`はShipaton公式
-     ルールで確認済み／クリップボードへのベストエフォートコピー）。コミット c6b1043 。
-   - `~/.claude/skills/buildinpublic-tweet/SKILL.md`を実装（グローバル、このリポジトリには
-     含まれない）。SmileStudio側CLAUDE.mdにツイート運用規約セクションを追記。
-2. `/buildinpublic-tweet 0028`で実際にツイート文を試作。
-   - `docs/any-decision-record/en/0028-handdrawn-structure-recognition-mvp.md`をオンデマンド生成
-     （コミット 13427e8 ）。
-   - 最初のドラフトが280字制限に対して余裕があったにもかかわらず、電報調の断片的な文章になり
-     「なぜその決定をしたか」が本文から失われ`link`任せになっていたとユーザーから指摘。自然な
-     文章を優先するようSKILL.md（STEP 4）を修正し、個人メモリ`feedback_dont_overcompress_for_char_limits`
-     にも記録。
-3. Issue #5（core-smiles: 2Dレイアウト計算）を`/grill-with-docs`で設計:
-   - AnyDR 0045: `computeLayout(molecule): Map<AtomId, Point2D>`を独立関数として実装（`Molecule`の
-     プロパティにはしない。レイアウトは構造そのものでなく「描画のための一つの解釈」のため）。
-   - AnyDR 0046: 鎖状部分はジグザグ配置（結合角を交互に反転）。
-   - AnyDR 0047: 分岐点は対称なY字分岐（入ってきた結合を基準に±120度）。`Bond`に由来を示す
-     フラグを追加する複雑さを避けるため。
-   - TDDで実装（`Point2D.kt`・`Layout.kt`・`LayoutTest.kt`新規）。環（`Molecule.rings`）は正多角形、
-     置換基は環の中心から外向きに配置。テストは正確な座標一致ではなく結合長・角度を許容誤差付きで
-     検証する方式にし、この方式のおかげで「環の置換基が外向きでなく真横に配置される」バグを
-     実装中に発見・修正できた（`placeOutgoing`の±120度オフセットをそのまま流用していたのが原因）。
-   - コミット 899571e 。Issue #5にコメント＋クローズ、マップIssue #1を更新。
+1. TDDワークフローを5ステップに再定義し、ステップごとの確認を撤廃（AnyDR 0065〜0069、
+   コミット `fc30e9f` ・ `fe51855` ）。
+2. Issue #6「core-smiles: 芳香族結合のKekulize変換」をTDDで実装・クローズ（コミット `49522cb` ）。
+3. Issue #7「ui-compose: MoleculeCanvasの描画実装」を2段階（描画計画の純粋関数化→実際の
+   Canvas描画）で完了・クローズ（AnyDR 0067・0068、コミット `9fb3785` ・ `6b43e18` ）。目視確認で
+   原子ラベルと結合線が重なるバグを発見・修正。
+4. Issue #13「ui-composeのモバイル向け調整」をレスポンシブ自動フィットスケーリングとして実装・
+   クローズ（AnyDR 0071、コミット `d0851b2` ）。
+5. Issue #14「Koog SDK導入とVision LLM呼び出し」をTDDで実装、`vision-recognition`モジュール
+   新設（AnyDR 0072〜0076、コミット `a23e49a` ）。close判断の棚卸しで、AnyDR 0073の設計
+   （Failureはネットワークエラー等を表現する）と実装の乖離（例外が素通しで伝播していた）を
+   発見し、例外ハンドリングとレート制限の明示的な検知を追加実装（AnyDR 0077・0078、コミット
+   `833a62d` ）。Koogの`LLMClientException`はHTTPステータス/ヘッダーを公開しないため、
+   レート制限はメッセージ文字列マッチングで検知する設計とし、JetBrains/koogのYouTrack
+   [KG-652](https://youtrack.jetbrains.com/issue/KG-652)にコメントを投稿。Issue #14をclose。
+6. Issue #18の署名設定に進む前に「実際にユーザーが操作できるレベルか」を確認したところ、
+   `android-app`・`desktop-app`のどちらにも、SMILES文字列を入力する手段（`TextField`等）が
+   リポジトリ全体に一つも存在しないことを発見（`MoleculeCanvas(molecule = null, ...)`を
+   直書きしているだけだった）。ui-composeに`MoleculeEditor`（状態を呼び出し側にホイストする
+   設計、AnyDR 0028が前提とするIssue #15の将来連携を見据えて選定）をTDDで新規実装し、両アプリに
+   配線（コミット `8a7883a` ）。エミュレータでの実機確認中、`AndroidManifest.xml`にテーマ指定が
+   なくデフォルトActionBarがCompose UIの先頭（TextField）を覆い隠す別バグを発見・修正
+   （`NoActionBar`テーマを追加）。ベンゼン環の描画・不正入力時のエラー表示（直前の描画は保持）を
+   実機で確認済み。
+7. Issue #18向けにandroid-appのリリース署名設定を実施: `build.gradle.kts`に
+   `keystore.properties`がある場合のみ署名する条件付き設定を追加（コミット `5f9ba9d` ）。
+   `/wizard`スキルでキーストア生成スクリプトを作成・実行（パスワードはClaude側からは不可視）。
+   Git Bash特有の2つの環境問題（`keytool`がPATHに無い、`keystore.properties`の`storeFile`が
+   POSIX形式のパスでWindowsネイティブのGradleに認識されない）に遭遇し解決。`jarsigner -verify`
+   で署名済みAABを検証済み。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
-- `0001`〜`0038`: 前回までに反映済み（詳細は割愛）。
-- `0039`〜`0044`（BuildInPublicツイート作成Skillの設計）: **実装済み**（グローバルSkill、
-  コミット c6b1043 ）。
-- `0045`〜`0047`（2Dレイアウト計算の設計）: **実装済み**（Issue #5、コミット 899571e ）。
-- `0048`・`0049`: このセッションでは未確認・未着手（上記「注意」参照、別セッションの可能性）。
+- `0001`〜`0064`: 前回までに反映済み（詳細は割愛）。
+- `0065`〜`0069`（TDDワークフロー5ステップ化、ステップごと確認の撤廃）: **実装済み**（運用ルール、
+  コード変更なし）。
+- `0067`・`0068`（描画計画の純粋関数化、骨格式ラベル方針）: **実装済み**（Issue #7）。
+- `0070`（AnyAR5件おきのツイート候補提案）: **実装済み**（運用ルール）。
+- `0071`（MoleculeCanvasはレスポンシブ対応のみ、グラフィカル編集エディタは不採用）:
+  **実装済み**（Issue #13）。
+- `0072`〜`0076`（vision-recognitionモジュール設計: 新規モジュール配置、RecognitionResult型、
+  LLMProvider enum、ロジックとプロバイダ配線の分離、モジュール名）: **実装済み**（Issue #14）。
+- `0077`・`0078`（LLM呼び出し例外のFailure変換、レート制限のメッセージマッチング検知）:
+  **実装済み**（Issue #14クローズ後の追補）。
 
 ## 現在のプロジェクト構成
 
 ```
 core-smiles/src/commonMain/kotlin/com/smilestudio/core/
-  Point2D.kt         【新規】data class(x, y) + plus/minus/times演算子
-  Layout.kt          【新規】fun computeLayout(molecule): Map<AtomId, Point2D>
-                     鎖=ジグザグ(120度交互反転)、分岐=Y字(±120度対称)、環=正多角形+置換基は外向き
-  （Ring.kt, Molecule.kt等、Issue #4完了時点から変更なし）
-core-smiles/src/commonTest/kotlin/com/smilestudio/core/
-  LayoutTest.kt       【新規】7件。結合長・角度を許容誤差付きで検証（厳密な座標一致ではない）
+  SmilesParser.kt, Tokenizer.kt, ParseResult.kt, TokenizeResult.kt  トークナイズ＋パース
+  Molecule.kt, Atom.kt, AtomId.kt, Bond.kt, BondType.kt, Element.kt, HydrogenCount.kt  化学モデル
+  Ring.kt          環検出（DFS背後辺方式、縮合環は対象外）
+  Layout.kt        computeLayout(molecule): 2Dレイアウト（鎖=ジグザグ、分岐=Y字、環=正多角形）
+  Kekulize.kt      芳香族結合のKekulize変換（Issue #6）
+  Point2D.kt       座標のdata class
 
-docs/any-decision-record/  0001〜0047（0048・0049は別セッション作成、内容未確認）
-                            en/0028-handdrawn-structure-recognition-mvp.md（オンデマンド生成済み）
-~/.claude/skills/buildinpublic-tweet/SKILL.md  【新規、グローバル】このリポジトリには含まれない
+ui-compose/src/commonMain/kotlin/com/smilestudio/ui/
+  MoleculeDrawing.kt   planMoleculeDrawing(molecule): DrawCommandのリストを計算する純粋関数
+  MoleculeCanvas.kt    Composable。DrawCommandを実際にCanvas APIで描画。レスポンシブ自動フィット
+  MoleculeEditor.kt    【新規】Composable。TextField＋エラー表示＋MoleculeCanvas。状態は呼び出し側
+                       にホイスト。resolveMoleculeEditorState()が純粋関数としてテスト可能
 
-GitHub Issues（2マップ体制、Issue #11優先＋#5〜#7例外）:
+vision-recognition/src/commonMain/kotlin/com/smilestudio/vision/  【新規モジュール】(jvm+android)
+  RecognitionResult.kt   sealed class Success(smiles)/Failure(reason)
+  LLMProvider.kt         enum（現状GOOGLE_GEMINIのみ）
+  RunRecognition.kt      runRecognition(): Koog呼び出し・例外→Failure変換・レート制限検知
+  RecognizeStructure.kt  recognizeStructure(): 薄いプロバイダ配線アダプタ
+
+android-app/src/main/
+  AndroidManifest.xml         【修正】NoActionBarテーマを追加（Compose UIを覆い隠すバグの修正）
+  MainActivity.kt             MoleculeEditorを配線、状態はremember { mutableStateOf("") }
+  build.gradle.kts            【修正】keystore.properties があれば条件付きでrelease署名
+
+desktop-app/src/main/kotlin/Main.kt   MoleculeEditorを配線（android-appと同じ構造）
+
+docs/any-decision-record/  0001〜0078
+                            en/  0028, 0062, 0066がオンデマンド生成済み（欠番あり、正常）
+docs/any-action-record/    0001〜0027
+                            en/  0005, 0025がオンデマンド生成済み（欠番あり、正常）
+
+keystore.properties, ~/.smilestudio-keys/upload-keystore.jks
+  【新規、gitignore対象・リポジトリ外】リリース署名用。このマシンにのみ存在、バックアップ未実施
+
+GitHub Issues（2マップ体制）:
   Issue #1  マップ「SmilesStudio v1: 最小構成でのユーザーリリース」
-    #2,#3,#4,#5 クローズ済み。フロンティア: #6「芳香族結合のKekulize変換」
-  Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（優先中、子Issue11件）
-    #12 クローズ済み。フロンティア: #14「Koog SDK導入とVision LLM呼び出し」
-    （#13は#5〜#7完了待ちで実質保留、#6・#7が残っている）
-.git/hooks/pre-commit       コミットSHA表記チェック用の非ブロッキング警告（リポジトリ追跡外）
+    #2,#3,#4,#5,#6,#7 クローズ済み。フロンティア: #8（未close判断、下記参照）→#9→#10
+  Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（子Issue12件）
+    #12,#13,#14 クローズ済み。フロンティア: #15,#16,#17（依存解消済み・未着手）、#18（進行中）
+GitHubマイルストーン: Phase 1（期限2026-09-08）残りは#18のみ。Phase 2（期限2026-09-22）。
 ```
 
 ## ⚠️ コードと決定のズレ
 
-- デスクトップ側（Issue #1）: `0020`（Kekulé描画）→Issue #6（未実装）。`0017`実描画・SMILES入力欄
-  →Issue #7, #8（未実装）。`0021`パッケージング→Issue #9。`0023`CI→Issue #10。
-- Shipaton側（Issue #11）: `0028`・`0029`（Koog連携）→Issue #14。`0036`（B/C課金）→Issue #16,
-  #17。`0037`のテストハーネス層→Issue #22。いずれも未実装。
+- **Issue #8「desktop-app: SMILES入力欄とパースエラー表示の実装」がGitHub上まだOPEN**だが、
+  今セッションで実装した`MoleculeEditor`（desktop-app/android-app両方に配線済み）で実質的に
+  スコープを満たしている。close判断がまだユーザーに確認されていない。次セッションの最優先確認
+  事項。
+- Issue #15（手描き認識UI）は#7完了により依存は解消済みだが、#14 close後もまだ未着手。
+- Issue #16（BYOK設定画面）・#17（RevenueCat課金）も#14 close済みで着手可能だが未着手。
+  `0036`（B/C課金プラン方針）はまだコードに反映されていない。
+- `0037`のテストハーネス層（三層防御OSS戦略）→ Issue #22: 未実装。
 
 ## 既知の注意点（未対応・要フォローアップ）
 
-1. `compose.runtime`等のバージョンカタログ経由アクセサが非推奨警告（優先度低、未着手）。
-2. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
-3. `Molecule.rings`のDFS背後辺方式・`computeLayout`の固定角度配置は、いずれも縮合環・橋かけ環を
-   正しく扱えない（AnyDR 0026・0019）。v1スコープでは問題ない。
-4. `computeLayout`の3方向以上の分岐（3+outgoing）・環の2箇所以上の置換基は、フォールバック実装
-   のみでテストカバレッジがない（v1文法スコープでは基本的に発生しない想定）。
+1. レート制限の判定はKoogの例外メッセージの文字列マッチングに依存する脆い実装（AnyDR 0078）。
+   JetBrains/koogのYouTrack [KG-652](https://youtrack.jetbrains.com/issue/KG-652)が解決されれば
+   置き換え候補。
+2. `MoleculeEditor`のTextField、Material3デフォルトスタイルだと未フォーカス時の視覚コントラスト
+   が低く存在に気づきにくい（機能面は問題ないが要UI磨き込み）。
+3. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
+4. `Molecule.rings`のDFS背後辺方式・`computeLayout`の固定角度配置は縮合環・橋かけ環を正しく
+   扱えない（v1スコープでは問題ない）。
 5. 有料プランの具体的価格・使用上限（レート制限）は未決定のまま。
-6. このマシンのAndroid SDKは`cmdline-tools`を手動追加済み。AVD`SmileStudio_Test`
-   （API 36, Pixel 6）が1件作成済み。
+6. `ai.koog:prompt-executor-google-client`は`koog-agents`本体（1.2.0安定版）とは独立バージョニング
+   でまだbeta（1.1.1-beta）。
+7. このマシンのAndroid SDKは`D:\Android\Sdk`（`GRADLE_USER_HOME`も`D:\Android\.gradle`）。
+   AVD`SmileStudio_Test`（API 36）が1件作成済み。
 
 ## 次にやりそうなこと（未着手）
 
-- **Issue #6「core-smiles: 芳香族結合のKekulize変換」**（Issue #5完了により依存解消。AnyDR 0035の
-  レンダリングパイプライン優先順序の次のステップ）。
-- 並行して着手可能: [Issue #14「Koog SDK導入とVision LLM呼び出し」](https://github.com/ItisNoMatter/SmilesStudio/issues/14)
-  （依存なし）。
-- どちらから着手するかはユーザー指示待ち。
-- 未コミットの`CLAUDE.md`変更・AnyDR 0048/0049の扱いをユーザーに確認する。
-- Play Store申請は2026-09-20頃を目標（審査バッファ）。
+- **最優先**: Issue #8をcloseすべきか確認する（`MoleculeEditor`で実質実装済み）。
+- Issue #18の残り: Google Play Console側の作業（アプリ登録・非公開テストトラック設定・
+  テスター12人以上の確保・14日間運用）— Claude側では代行不可、ユーザー主導。
+- 並行着手可能: Issue #15（手描き認識UI）・#16（BYOK設定画面）・#17（RevenueCat課金）。
+- Phase 1マイルストーン期限は2026-09-08（あと2日）。
