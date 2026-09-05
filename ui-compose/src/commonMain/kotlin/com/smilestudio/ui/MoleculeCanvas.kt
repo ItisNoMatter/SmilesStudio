@@ -13,9 +13,26 @@ import com.smilestudio.core.BondType
 import com.smilestudio.core.Molecule
 import com.smilestudio.core.Point2D
 
-private const val PIXELS_PER_UNIT = 60f
+private const val DEFAULT_SCALE = 60f
+private const val MAX_SCALE = 120f
+private const val FIT_MARGIN_FRACTION = 0.85f
+private const val MIN_MOLECULE_EXTENT = 1e-3f
 private const val STROKE_WIDTH_PX = 3f
 private const val PARALLEL_LINE_SPACING_PX = STROKE_WIDTH_PX * 2.5f
+
+/**
+ * Scale (pixels per layout unit) that fits a molecule of the given size within [FIT_MARGIN_FRACTION]
+ * of the available canvas, preserving aspect ratio. Falls back to [DEFAULT_SCALE] for a
+ * zero-extent molecule (e.g. a single isolated atom), and never exceeds [MAX_SCALE].
+ */
+fun computeFitScale(moleculeWidth: Float, moleculeHeight: Float, canvasWidth: Float, canvasHeight: Float): Float {
+    if (moleculeWidth < MIN_MOLECULE_EXTENT && moleculeHeight < MIN_MOLECULE_EXTENT) {
+        return DEFAULT_SCALE
+    }
+    val scaleX = if (moleculeWidth < MIN_MOLECULE_EXTENT) Float.MAX_VALUE else (canvasWidth * FIT_MARGIN_FRACTION) / moleculeWidth
+    val scaleY = if (moleculeHeight < MIN_MOLECULE_EXTENT) Float.MAX_VALUE else (canvasHeight * FIT_MARGIN_FRACTION) / moleculeHeight
+    return minOf(scaleX, scaleY, MAX_SCALE)
+}
 
 @Composable
 fun MoleculeCanvas(molecule: Molecule?, modifier: Modifier = Modifier) {
@@ -26,7 +43,7 @@ fun MoleculeCanvas(molecule: Molecule?, modifier: Modifier = Modifier) {
         val commands = planMoleculeDrawing(molecule)
         if (commands.isEmpty()) return@Canvas
 
-        val toCanvas = canvasMapper(commands, Offset(size.width / 2f, size.height / 2f))
+        val toCanvas = canvasMapper(commands, size.width, size.height)
 
         for (command in commands) {
             when (command) {
@@ -48,20 +65,32 @@ fun MoleculeCanvas(molecule: Molecule?, modifier: Modifier = Modifier) {
     }
 }
 
-private fun canvasMapper(commands: List<DrawCommand>, canvasCenter: Offset): (Point2D) -> Offset {
+private fun canvasMapper(commands: List<DrawCommand>, canvasWidth: Float, canvasHeight: Float): (Point2D) -> Offset {
     val points = commands.flatMap { command ->
         when (command) {
             is DrawCommand.BondLine -> listOf(command.from, command.to)
             is DrawCommand.AtomLabel -> listOf(command.position)
         }
     }
-    val moleculeCenterX = (points.minOf { it.x } + points.maxOf { it.x }) / 2
-    val moleculeCenterY = (points.minOf { it.y } + points.maxOf { it.y }) / 2
+    val minX = points.minOf { it.x }
+    val maxX = points.maxOf { it.x }
+    val minY = points.minOf { it.y }
+    val maxY = points.maxOf { it.y }
+    val moleculeCenterX = (minX + maxX) / 2
+    val moleculeCenterY = (minY + maxY) / 2
+
+    val scale = computeFitScale(
+        moleculeWidth = (maxX - minX).toFloat(),
+        moleculeHeight = (maxY - minY).toFloat(),
+        canvasWidth = canvasWidth,
+        canvasHeight = canvasHeight,
+    )
+    val canvasCenter = Offset(canvasWidth / 2f, canvasHeight / 2f)
 
     return { point ->
         canvasCenter + Offset(
-            x = (point.x - moleculeCenterX).toFloat() * PIXELS_PER_UNIT,
-            y = -(point.y - moleculeCenterY).toFloat() * PIXELS_PER_UNIT,
+            x = (point.x - moleculeCenterX).toFloat() * scale,
+            y = -(point.y - moleculeCenterY).toFloat() * scale,
         )
     }
 }
