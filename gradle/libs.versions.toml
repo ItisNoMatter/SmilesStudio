@@ -6,9 +6,15 @@ androidx-activityCompose = "1.9.3"
 androidCompileSdk = "37"
 androidTargetSdk = "37"
 androidMinSdk = "26"
+koog = "1.2.0"
+koogGoogleClient = "1.1.1-beta"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koog" }
+koog-prompt-executor-google-client = { module = "ai.koog:prompt-executor-google-client", version.ref = "koogGoogleClient" }
+koog-http-client-ktor = { module = "ai.koog:http-client-ktor", version.ref = "koog" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
