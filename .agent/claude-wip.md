@@ -5,16 +5,13 @@
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: 最小ビルドの核体験（テキスト入力→構造式描画）が実機確認済み。Issue #8のclose判断が最優先
+## ステータス: 最小ビルドの核体験（テキスト入力→構造式描画）が実機確認済み。Issue #6〜8クローズ済み
 
 Shipatonロードマップの核となる「テキストでSMILESを入力すると構造式が描画される」体験が、
-Android・デスクトップ両方で実機（エミュレータ）確認済み。Issue #14（Koog SDK・Gemini Vision LLM
-連携）はclose済み。Issue #18（Android署名設定）はアプリ側の準備が完了し、Play Console側の
-手作業（アプリ登録・テスター確保）が残っている。
-
-**⚠️ 最優先で確認すること**: Issue #8「desktop-app: SMILES入力欄とパースエラー表示の実装」が
-GitHub上まだOPENのままだが、今セッションで実装した`MoleculeEditor`（desktop-app/android-app
-両方に配線済み）で実質的にスコープを満たしている。close判断がまだユーザーに確認されていない。
+Android・デスクトップ両方で実機確認済み。Issue #8「desktop-app: SMILES入力欄とパースエラー表示の
+実装」はdesktop-appでの実機動作確認（`c1ccccc1`→ベンゼン環描画）を経てclose済み。Issue #14
+（Koog SDK・Gemini Vision LLM連携）もclose済み。Issue #18（Android署名設定）はアプリ側の準備が
+完了し、Play Console側の手作業（アプリ登録・テスター確保）が残っている。
 
 ## 直近セッションでやったこと（2026-09-03〜2026-09-06）
 
@@ -48,6 +45,11 @@ GitHub上まだOPENのままだが、今セッションで実装した`MoleculeE
    Git Bash特有の2つの環境問題（`keytool`がPATHに無い、`keystore.properties`の`storeFile`が
    POSIX形式のパスでWindowsネイティブのGradleに認識されない）に遭遇し解決。`jarsigner -verify`
    で署名済みAABを検証済み。
+8. Issue #8「desktop-app: SMILES入力欄とパースエラー表示の実装」のclose判断のため、
+   `./gradlew :desktop-app:run`で実際に起動し動作確認（Issue本文の「進め方」通り）。
+   PowerShellの`PrintWindow` APIでウィンドウをキャプチャし、`c1ccccc1`入力→ベンゼン環描画を
+   目視確認。スコープ3項目（入力欄・Success時の反映・Failure時のエラー表示）を満たしている
+   と判断しclose。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
@@ -103,7 +105,7 @@ keystore.properties, ~/.smilestudio-keys/upload-keystore.jks
 
 GitHub Issues（2マップ体制）:
   Issue #1  マップ「SmilesStudio v1: 最小構成でのユーザーリリース」
-    #2,#3,#4,#5,#6,#7 クローズ済み。フロンティア: #8（未close判断、下記参照）→#9→#10
+    #2,#3,#4,#5,#6,#7,#8 クローズ済み。フロンティア: #9（Windows向けパッケージング）→#10（CI）
   Issue #11 マップ「SmilesStudio: Shipaton 2026対応」（子Issue12件）
     #12,#13,#14 クローズ済み。フロンティア: #15,#16,#17（依存解消済み・未着手）、#18（進行中）
 GitHubマイルストーン: Phase 1（期限2026-09-08）残りは#18のみ。Phase 2（期限2026-09-22）。
@@ -111,10 +113,6 @@ GitHubマイルストーン: Phase 1（期限2026-09-08）残りは#18のみ。P
 
 ## ⚠️ コードと決定のズレ
 
-- **Issue #8「desktop-app: SMILES入力欄とパースエラー表示の実装」がGitHub上まだOPEN**だが、
-  今セッションで実装した`MoleculeEditor`（desktop-app/android-app両方に配線済み）で実質的に
-  スコープを満たしている。close判断がまだユーザーに確認されていない。次セッションの最優先確認
-  事項。
 - Issue #15（手描き認識UI）は#7完了により依存は解消済みだが、#14 close後もまだ未着手。
 - Issue #16（BYOK設定画面）・#17（RevenueCat課金）も#14 close済みで着手可能だが未着手。
   `0036`（B/C課金プラン方針）はまだコードに反映されていない。
@@ -138,7 +136,6 @@ GitHubマイルストーン: Phase 1（期限2026-09-08）残りは#18のみ。P
 
 ## 次にやりそうなこと（未着手）
 
-- **最優先**: Issue #8をcloseすべきか確認する（`MoleculeEditor`で実質実装済み）。
 - Issue #18の残り: Google Play Console側の作業（アプリ登録・非公開テストトラック設定・
   テスター12人以上の確保・14日間運用）— Claude側では代行不可、ユーザー主導。
 - 並行着手可能: Issue #15（手描き認識UI）・#16（BYOK設定画面）・#17（RevenueCat課金）。
