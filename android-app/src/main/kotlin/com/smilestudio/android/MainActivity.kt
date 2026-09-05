@@ -6,8 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.smilestudio.ui.MoleculeCanvas
+import com.smilestudio.ui.MoleculeEditor
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,7 +19,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    MoleculeCanvas(molecule = null, modifier = Modifier.fillMaxSize())
+                    var smilesText by remember { mutableStateOf("") }
+                    MoleculeEditor(
+                        smilesText = smilesText,
+                        onSmilesTextChange = { smilesText = it },
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
             }
         }
