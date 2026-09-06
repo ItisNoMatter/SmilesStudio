@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -38,10 +37,11 @@ fun MoleculeEditor(smilesText: String, onSmilesTextChange: (String) -> Unit, mod
     val state = resolveMoleculeEditorState(smilesText, previousMolecule)
     previousMolecule = state.molecule
 
+    // WindowInsets.safeDrawing already includes ime, so this alone covers both the
+    // keyboard-closed (nav bar/gesture inset) and keyboard-open cases -- adding a
+    // separate imePadding() on top double-counts the keyboard height.
     Column(
-        modifier = modifier
-            .imePadding()
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
+        modifier = modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
     ) {
         MoleculeCanvas(molecule = state.molecule, modifier = Modifier.weight(1f).fillMaxWidth())
         state.errorMessage?.let { Text(it) }
