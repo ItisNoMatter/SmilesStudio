@@ -58,7 +58,13 @@ android {
 
 dependencies {
     implementation(project(":ui-compose"))
-    implementation(compose.material3)
+    // MaterialExpressiveTheme/MotionScheme.expressive() aren't public yet in the JetBrains
+    // Compose Multiplatform material3 artifact (still internal as of composeMultiplatform's
+    // bundled 1.12.0-alpha03). android-app is Android-only, so it can depend on the real
+    // AndroidX material3 alpha directly instead, where these APIs are public (behind
+    // @OptIn(ExperimentalMaterial3ExpressiveApi::class)).
+    implementation(libs.androidx.compose.material3)
+    implementation(compose.materialIconsExtended)
     implementation(compose.foundation)
     implementation(compose.ui)
     implementation(libs.androidx.activity.compose)
