@@ -1,10 +1,12 @@
 package com.smilestudio.android
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,6 +50,12 @@ fun SmilesStudioApp() {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
 
+    val menuButtonInteractionSource = remember { MutableInteractionSource() }
+    val clearItemInteractionSource = remember { MutableInteractionSource() }
+    val aboutItemInteractionSource = remember { MutableInteractionSource() }
+    val homeTabInteractionSource = remember { MutableInteractionSource() }
+    val howToTabInteractionSource = remember { MutableInteractionSource() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -55,7 +63,8 @@ fun SmilesStudioApp() {
                 actions = {
                     IconButton(
                         onClick = { menuExpanded = true },
-                        modifier = Modifier.size(48.dp).expressivePressScale(),
+                        interactionSource = menuButtonInteractionSource,
+                        modifier = Modifier.size(48.dp).expressivePressScale(menuButtonInteractionSource),
                     ) {
                         Icon(Icons.Rounded.MoreVert, contentDescription = "メニュー")
                     }
@@ -67,6 +76,8 @@ fun SmilesStudioApp() {
                                     smilesText = ""
                                     menuExpanded = false
                                 },
+                                interactionSource = clearItemInteractionSource,
+                                modifier = Modifier.expressivePressScale(clearItemInteractionSource),
                             )
                         }
                         DropdownMenuItem(
@@ -75,6 +86,8 @@ fun SmilesStudioApp() {
                                 menuExpanded = false
                                 showAboutDialog = true
                             },
+                            interactionSource = aboutItemInteractionSource,
+                            modifier = Modifier.expressivePressScale(aboutItemInteractionSource),
                         )
                     }
                 },
@@ -87,19 +100,23 @@ fun SmilesStudioApp() {
                     onClick = { selectedTab = AppTab.HOME },
                     icon = { Icon(Icons.Rounded.Home, contentDescription = null) },
                     label = { Text(AppTab.HOME.label, style = MaterialTheme.typography.labelMedium) },
+                    interactionSource = homeTabInteractionSource,
+                    modifier = Modifier.expressivePressScale(homeTabInteractionSource),
                 )
                 NavigationBarItem(
                     selected = selectedTab == AppTab.HOW_TO,
                     onClick = { selectedTab = AppTab.HOW_TO },
                     icon = { Icon(Icons.Rounded.QuestionMark, contentDescription = null) },
                     label = { Text(AppTab.HOW_TO.label, style = MaterialTheme.typography.labelMedium) },
+                    interactionSource = howToTabInteractionSource,
+                    modifier = Modifier.expressivePressScale(howToTabInteractionSource),
                 )
             }
         },
     ) { innerPadding ->
         val enterAlphaSpec = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
         val enterOffsetSpec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
-        androidx.compose.animation.AnimatedContent(
+        AnimatedContent(
             targetState = selectedTab,
             modifier = Modifier.padding(innerPadding),
             transitionSpec = {
