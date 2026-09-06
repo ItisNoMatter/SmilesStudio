@@ -1,7 +1,13 @@
 package com.smilestudio.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -32,9 +38,13 @@ fun MoleculeEditor(smilesText: String, onSmilesTextChange: (String) -> Unit, mod
     val state = resolveMoleculeEditorState(smilesText, previousMolecule)
     previousMolecule = state.molecule
 
-    Column(modifier = modifier) {
-        TextField(value = smilesText, onValueChange = onSmilesTextChange, modifier = Modifier.fillMaxWidth())
-        state.errorMessage?.let { Text(it) }
+    Column(
+        modifier = modifier
+            .imePadding()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
+    ) {
         MoleculeCanvas(molecule = state.molecule, modifier = Modifier.weight(1f).fillMaxWidth())
+        state.errorMessage?.let { Text(it) }
+        TextField(value = smilesText, onValueChange = onSmilesTextChange, modifier = Modifier.fillMaxWidth())
     }
 }
