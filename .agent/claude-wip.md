@@ -1,24 +1,41 @@
 # Claude Code WIP メモ (SmilesStudio プロジェクト基盤構築)
 
-最終更新: 2026-09-06
+最終更新: 2026-09-09
 
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: android-appがMaterial 3 Expressiveデザイン＋ストア掲載素材込みで完成。Issue #18のPlay Console作業が次
+## ステータス: Issue #18のPlay Console非公開テストが実際に開始（14日間カウント進行中）
 
-Issue #14（Koog/Gemini連携）に続き、Issue #24（Safe Area対応）・Issue #25（Material 3
-Expressiveデザイン）・Issue #26（ストア掲載素材）が今セッションで完了しclose済み。
-android-appは「ホーム」（SMILES入力→構造式描画）・「使い方」（記法解説）の2タブ構成、
-指定のpurple系カラースキーム、TopAppBar/NavigationBar、独自の分子構造アイコンを備え、
-実機（エミュレータ）で全機能を確認済み。プライバシーポリシーもGitHub Pagesで公開中。
+Issue #14（Koog/Gemini連携）・Issue #24（Safe Area対応）・Issue #25（Material 3
+Expressiveデザイン）・Issue #26（ストア掲載素材）に続き、Issue #18のPlay Console側の実操作
+（アプリ登録・ストア掲載情報・アプリのコンテンツ宣言・非公開テストトラック設定・テスター
+確保）を完了し、2026-09-09に非公開テストが正式に開始された（AnyAR 0034）。android-appは
+「ホーム」（SMILES入力→構造式描画）・「使い方」（記法解説）の2タブ構成、指定のpurple系
+カラースキーム、TopAppBar/NavigationBar、独自の分子構造アイコンを備え、実機（エミュレータ）
+で全機能を確認済み。プライバシーポリシーもGitHub Pagesで公開中。
 
-Issue #18（Google Play非公開テストの開始・運用）を`/grill-with-docs`で設計し、テスター
-確保方法（有料サービス）まで決めたが、Play Console側の実操作（アプリ登録・テスター申込み・
-14日間運用）はユーザー主導で今後進める。新たに、英語対応（Issue #27）を非公開テストと
-並行して進める方針も決めた。
+テスター確保はTesters Community経由（Googleグループ`testers-community@googlegroups.com`を
+Play Consoleのメーリングリストに追加済み）。14日間、12人以上のオプトイン状態を維持する
+必要がある（〜2026-09-23頃まで）。
 
-## 直近セッションでやったこと（2026-09-06、Issue #24〜#27関連）
+## 直近セッションでやったこと（2026-09-09、Issue #18 Play Console実操作）
+
+*   コード変更なし（Play Console上での手動操作のみ）。当初`/wizard`スキルでbashウィザード
+    スクリプトを用意したが、実行中のスクリプトファイルを編集してしまい構文エラーで停止する
+    事故が発生。ユーザーの提案でウィザード方式をやめ、チャット上でスクリーンショットを
+    見ながら一つずつ対話的に案内する方式に切り替えた（詳細はAnyAR 0034参照）。
+*   Play Consoleでアプリを作成（パッケージ名`com.smilestudio.android`）、メインのストアの
+    掲載情報・ストアの設定（カテゴリ/連絡先）・アプリのコンテンツ宣言（プライバシー
+    ポリシーURL・広告なし・データセーフティ等）を入力。
+*   非公開テストトラックを作成しAABをアップロード、Googレビューに送信・通過。
+*   テスター確保サービスはTesters Community→決済失敗→onTest.app（Pros/Cons比較の上で選定）
+    →決済失敗→SwapTest（無料の相互テスト、Pros/Cons比較の上で選定）を検討したが、実行前に
+    Testers Communityの決済が最終的に通ったため、当初計画通りTesters Communityで完了。
+*   Testers CommunityのGoogleグループをPlay Consoleのテスターのメーリングリストに追加し、
+    非公開テストが正式に開始。AnyAR 0034を記録。
+
+## 過去セッションでやったこと（2026-09-06、Issue #24〜#27関連）
 
 1. Issue #24「Safe Area対応」: `/grill-with-docs`で設計（AnyDR 0079〜0083）。当初
    「TextField画面上部固定」で進めていたが、ユーザー指摘で「TextField下部固定＋IME
@@ -59,10 +76,10 @@ Issue #18（Google Play非公開テストの開始・運用）を`/grill-with-do
 - `0001`〜`0078`: 前回までに反映済み（詳細は割愛）。
 - `0079`〜`0083`（Safe Area設計、途中でTextField位置を撤回・変更）: **実装済み**
   （Issue #24）。
-- `0084`（Play Console初回アップロードは#24・#25を除外しない）: **方針決定のみ**
-  （Issue #18実行時に反映）。
-- `0085`・`0086`（テスター確保は有料サービス、Testers Community使用）: **未実行**
-  （ユーザーが今後申し込み）。
+- `0084`（Play Console初回アップロードは#24・#25を除外しない）: **実装済み**（Issue #18）。
+- `0085`・`0086`（テスター確保は有料サービス、Testers Community使用）: **実行済み**
+  （Issue #18、onTest.app/SwapTestを一時検討したが最終的に当初計画通りTesters Communityで
+  実行。詳細はAnyAR 0034）。
 - `0087`（ストア掲載素材を独立Issue化）・`0088`（プライバシーポリシーはGitHub Pages）・
   `0089`（アイコンはClaudeがSVGで作成）: **実装済み**（Issue #26）。
 - `0090`（英語対応はIssue #18と並行する別Issue #27で進める）: **Issue化のみ**
@@ -112,16 +129,14 @@ keystore.properties, ~/.smilestudio-keys/upload-keystore.jks
 GitHub Issues（2マップ体制）:
   Issue #1  マップ「SmilesStudio v1」: #2〜#8クローズ済み。フロンティア: #9→#10
   Issue #11 マップ「Shipaton 2026」（子Issue14件、#24〜#27を今セッションで追加）:
-    #12,#13,#14,#24,#25,#26 クローズ済み。フロンティア: #15,#16,#17,#22（Phase 2、未着手）、
-    #18（Phase 1、進行中、#26完了により`blocked_by`解消）、#27（英語対応、新規・並行進行）
-GitHubマイルストーン: Phase 1（期限2026-09-08、あと2日）残りは#18のみ。Phase 2（期限2026-09-22）。
+    #12,#13,#14,#24,#25,#26 クローズ済み。#18は非公開テスト実行中（未close、14日間経過待ち）。
+    フロンティア: #15,#16,#17,#22（Phase 2、未着手）、#27（英語対応、非公開テストと並行進行）
+GitHubマイルストーン: Phase 1（期限2026-09-08、経過）。#18の非公開テストは2026-09-09開始、
+  〜2026-09-23頃まで12人以上のオプトイン維持が必要。Phase 2（期限2026-09-22）。
 ```
 
 ## ⚠️ コードと決定のズレ
 
-- Issue #18: `/grill-with-docs`で設計は完了したが、Play Console側の実操作（アプリ登録・
-  ストア掲載情報入力・Testers Community申込み・非公開テストトラック設定）はまだ何も
-  実行していない。ユーザー主導での作業が必要。
 - Issue #27（英語対応）: Issueは作成したが実装は未着手。全UI文字列が`strings.xml`化
   されておらずKotlinコードに直書きのまま。
 - Issue #15（手描き認識UI）・#16（BYOK設定画面）・#17（RevenueCat課金）: 依存解消済みだが
@@ -148,9 +163,9 @@ GitHubマイルストーン: Phase 1（期限2026-09-08、あと2日）残りは
 
 ## 次にやりそうなこと（未着手）
 
-- **Issue #18の残り**: Play Consoleでのストア掲載情報入力（アイコン・スクリーンショット・
-  プライバシーポリシーURLは準備済み）、Testers Community申込み、非公開テストトラック設定、
-  14日間運用。Claude側では代行不可、ユーザー主導。
-- Phase 1マイルストーン期限は2026-09-08（あと2日）。
+- **Issue #18の残り**: 14日間（〜2026-09-23頃）、Testers Community経由のテスターが
+  12人以上オプトインした状態を維持できているか定期的に確認。維持できたら本番アクセス申請
+  （Issue #23、未作成）に進む。Claude側では代行不可、ユーザー主導。
 - 並行着手可能: Issue #27（英語対応）・#15（手描き認識UI）・#16（BYOK設定画面）・#17
   （RevenueCat課金）。
+- 14日間経過後: 本番アクセス申請（Issue #23）→ Devpost提出（Issue #19）。
