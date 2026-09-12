@@ -1,6 +1,7 @@
 package com.smilestudio.android
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -11,9 +12,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -44,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.smilestudio.android.apikey.AndroidKeystoreApiKeyEncryptor
@@ -59,6 +65,7 @@ import com.smilestudio.vision.recognizeStructure
 import kotlinx.coroutines.launch
 
 private const val API_KEY_PREFS_NAME = "api_key_prefs"
+private const val PRIVACY_POLICY_URL = "https://itisnomatter.github.io/SmilesStudio/privacy-policy/"
 private const val MISSING_API_KEY_MESSAGE = "APIキーが設定されていません"
 private const val OPEN_SETTINGS_ACTION_LABEL = "設定を開く"
 private const val IMAGE_READ_FAILURE_MESSAGE = "画像の読み込みに失敗しました"
@@ -249,7 +256,20 @@ fun SmilesStudioApp() {
                 TextButton(onClick = { showAboutDialog = false }) { Text("閉じる") }
             },
             title = { Text("SmilesStudioについて") },
-            text = { Text("SMILES記法をパースし、構造式をCanvasに描画するツールです。") },
+            text = {
+                Column {
+                    Text("SMILES記法をパースし、構造式をCanvasに描画するツールです。")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "プライバシーポリシー",
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+                        },
+                    )
+                }
+            },
         )
     }
 
