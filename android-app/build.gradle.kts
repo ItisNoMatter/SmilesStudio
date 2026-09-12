@@ -68,4 +68,5 @@ dependencies {
     implementation(compose.foundation)
     implementation(compose.ui)
     implementation(libs.androidx.activity.compose)
+    testImplementation(kotlin("test-junit"))
 }

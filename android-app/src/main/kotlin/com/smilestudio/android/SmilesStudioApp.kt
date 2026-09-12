@@ -27,15 +27,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.smilestudio.android.apikey.AndroidKeystoreApiKeyEncryptor
+import com.smilestudio.android.apikey.ApiKeyStore
+import com.smilestudio.android.apikey.SharedPreferencesKeyValueStore
 import com.smilestudio.android.theme.expressivePressScale
+
+private const val API_KEY_PREFS_NAME = "api_key_prefs"
 
 private enum class AppTab(val label: String) {
     HOME("ホーム"),
@@ -49,10 +56,23 @@ fun SmilesStudioApp() {
     var smilesText by remember { mutableStateOf("") }
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showApiKeyDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val apiKeyStore = remember {
+        ApiKeyStore(
+            encryptor = AndroidKeystoreApiKeyEncryptor(),
+            store = SharedPreferencesKeyValueStore(
+                context.getSharedPreferences(API_KEY_PREFS_NAME, Context.MODE_PRIVATE),
+            ),
+        )
+    }
+    var currentApiKey by remember { mutableStateOf(apiKeyStore.get()) }
 
     val menuButtonInteractionSource = remember { MutableInteractionSource() }
     val clearItemInteractionSource = remember { MutableInteractionSource() }
     val aboutItemInteractionSource = remember { MutableInteractionSource() }
+    val apiKeyItemInteractionSource = remember { MutableInteractionSource() }
     val homeTabInteractionSource = remember { MutableInteractionSource() }
     val howToTabInteractionSource = remember { MutableInteractionSource() }
 
@@ -88,6 +108,15 @@ fun SmilesStudioApp() {
                             },
                             interactionSource = aboutItemInteractionSource,
                             modifier = Modifier.expressivePressScale(aboutItemInteractionSource),
+                        )
+                        DropdownMenuItem(
+                            text = { Text("APIキー設定") },
+                            onClick = {
+                                menuExpanded = false
+                                showApiKeyDialog = true
+                            },
+                            interactionSource = apiKeyItemInteractionSource,
+                            modifier = Modifier.expressivePressScale(apiKeyItemInteractionSource),
                         )
                     }
                 },
@@ -145,6 +174,21 @@ fun SmilesStudioApp() {
             },
             title = { Text("SmilesStudioについて") },
             text = { Text("SMILES記法をパースし、構造式をCanvasに描画するツールです。") },
+        )
+    }
+
+    if (showApiKeyDialog) {
+        ApiKeySettingsDialog(
+            currentApiKey = currentApiKey,
+            onSave = { apiKey ->
+                apiKeyStore.save(apiKey)
+                currentApiKey = apiKeyStore.get()
+            },
+            onDelete = {
+                apiKeyStore.delete()
+                currentApiKey = null
+            },
+            onDismiss = { showApiKeyDialog = false },
         )
     }
 }
