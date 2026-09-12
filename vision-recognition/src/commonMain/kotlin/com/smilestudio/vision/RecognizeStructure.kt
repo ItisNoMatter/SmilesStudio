@@ -13,7 +13,7 @@ suspend fun recognizeStructure(imageBytes: ByteArray, apiKey: String, provider: 
     when (provider) {
         LLMProvider.GOOGLE_GEMINI -> {
             client = GoogleLLMClient(apiKey, httpClientFactory = KtorKoogHttpClient.Factory())
-            model = GoogleModels.Gemini2_5Flash
+            model = GoogleModels.Gemini3_5Flash
         }
     }
     return runRecognition(MultiLLMPromptExecutor(client), model, imageBytes)
