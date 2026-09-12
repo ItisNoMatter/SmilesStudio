@@ -58,6 +58,7 @@ android {
 
 dependencies {
     implementation(project(":ui-compose"))
+    implementation(project(":vision-recognition"))
     // MaterialExpressiveTheme/MotionScheme.expressive() aren't public yet in the JetBrains
     // Compose Multiplatform material3 artifact (still internal as of composeMultiplatform's
     // bundled 1.12.0-alpha03). android-app is Android-only, so it can depend on the real

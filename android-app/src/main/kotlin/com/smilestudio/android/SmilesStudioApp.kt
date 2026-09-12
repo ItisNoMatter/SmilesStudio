@@ -1,5 +1,10 @@
 package com.smilestudio.android
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -7,6 +12,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,14 +30,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,9 +49,19 @@ import androidx.compose.ui.unit.dp
 import com.smilestudio.android.apikey.AndroidKeystoreApiKeyEncryptor
 import com.smilestudio.android.apikey.ApiKeyStore
 import com.smilestudio.android.apikey.SharedPreferencesKeyValueStore
+import com.smilestudio.android.recognition.AndroidImageResizer
+import com.smilestudio.android.recognition.ImageRecognitionCoordinator
+import com.smilestudio.android.recognition.ImageRecognitionOutcome
+import com.smilestudio.android.recognition.createCaptureImageUri
+import com.smilestudio.android.recognition.readImageBytes
 import com.smilestudio.android.theme.expressivePressScale
+import com.smilestudio.vision.recognizeStructure
+import kotlinx.coroutines.launch
 
 private const val API_KEY_PREFS_NAME = "api_key_prefs"
+private const val MISSING_API_KEY_MESSAGE = "APIキーが設定されていません"
+private const val OPEN_SETTINGS_ACTION_LABEL = "設定を開く"
+private const val IMAGE_READ_FAILURE_MESSAGE = "画像の読み込みに失敗しました"
 
 private enum class AppTab(val label: String) {
     HOME("ホーム"),
@@ -69,6 +88,60 @@ fun SmilesStudioApp() {
     }
     var currentApiKey by remember { mutableStateOf(apiKeyStore.get()) }
 
+    var showImageSourceSheet by remember { mutableStateOf(false) }
+    var isRecognizing by remember { mutableStateOf(false) }
+    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val recognitionCoordinator = remember {
+        ImageRecognitionCoordinator(
+            getApiKey = apiKeyStore::get,
+            resizeImage = AndroidImageResizer::resize,
+            recognize = ::recognizeStructure,
+        )
+    }
+
+    fun runRecognition(imageUri: Uri) {
+        coroutineScope.launch {
+            val imageBytes = readImageBytes(context, imageUri)
+            if (imageBytes == null) {
+                snackbarHostState.showSnackbar(IMAGE_READ_FAILURE_MESSAGE)
+                return@launch
+            }
+            isRecognizing = true
+            val outcome = try {
+                recognitionCoordinator.recognize(imageBytes)
+            } finally {
+                isRecognizing = false
+            }
+            when (outcome) {
+                is ImageRecognitionOutcome.Recognized -> smilesText = outcome.smiles
+                is ImageRecognitionOutcome.Failed -> snackbarHostState.showSnackbar(outcome.reason)
+                ImageRecognitionOutcome.MissingApiKey -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = MISSING_API_KEY_MESSAGE,
+                        actionLabel = OPEN_SETTINGS_ACTION_LABEL,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        showApiKeyDialog = true
+                    }
+                }
+            }
+        }
+    }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        val uri = pendingCaptureUri
+        if (success && uri != null) {
+            runRecognition(uri)
+        }
+    }
+    val pickImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            runRecognition(uri)
+        }
+    }
+
     val menuButtonInteractionSource = remember { MutableInteractionSource() }
     val clearItemInteractionSource = remember { MutableInteractionSource() }
     val aboutItemInteractionSource = remember { MutableInteractionSource() }
@@ -76,7 +149,9 @@ fun SmilesStudioApp() {
     val homeTabInteractionSource = remember { MutableInteractionSource() }
     val howToTabInteractionSource = remember { MutableInteractionSource() }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("SmilesStudio", style = MaterialTheme.typography.titleLarge) },
@@ -159,6 +234,7 @@ fun SmilesStudioApp() {
                 AppTab.HOME -> HomeContent(
                     smilesText = smilesText,
                     onSmilesTextChange = { smilesText = it },
+                    onImageRecognitionClick = { showImageSourceSheet = true },
                     modifier = Modifier.fillMaxSize(),
                 )
                 AppTab.HOW_TO -> HowToContent(modifier = Modifier.fillMaxSize())
@@ -190,5 +266,26 @@ fun SmilesStudioApp() {
             },
             onDismiss = { showApiKeyDialog = false },
         )
+    }
+
+    if (showImageSourceSheet) {
+        ImageSourceBottomSheet(
+            onTakePhoto = {
+                showImageSourceSheet = false
+                val uri = createCaptureImageUri(context)
+                pendingCaptureUri = uri
+                takePictureLauncher.launch(uri)
+            },
+            onPickFromGallery = {
+                showImageSourceSheet = false
+                pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            onDismiss = { showImageSourceSheet = false },
+        )
+    }
+
+    if (isRecognizing) {
+        RecognitionLoadingOverlay()
+    }
     }
 }
