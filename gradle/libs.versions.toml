@@ -9,6 +9,9 @@ androidTargetSdk = "37"
 androidMinSdk = "26"
 koog = "1.2.0"
 koogGoogleClient = "1.1.1-beta"
+googleServices = "4.5.0"
+firebaseBom = "34.19.0"
+revenuecatPurchases = "10.15.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -17,6 +20,11 @@ koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
 koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koog" }
 koog-prompt-executor-google-client = { module = "ai.koog:prompt-executor-google-client", version.ref = "koogGoogleClient" }
 koog-http-client-ktor = { module = "ai.koog:http-client-ktor", version.ref = "koog" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-functions = { module = "com.google.firebase:firebase-functions" }
+revenuecat-purchases = { module = "com.revenuecat.purchases:purchases", version.ref = "revenuecatPurchases" }
+revenuecat-purchases-ui = { module = "com.revenuecat.purchases:purchases-ui", version.ref = "revenuecatPurchases" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -26,3 +34,4 @@ kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.
 jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

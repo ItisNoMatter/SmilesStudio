@@ -20,6 +20,26 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// Firebase (Issue #35) needs google-services.json, downloaded from the Firebase console,
+// placed at android-app/google-services.json. The plugin is applied conditionally so the
+// project still builds (without working Firebase Auth/Functions at runtime) for anyone who
+// hasn't set this up yet.
+val googleServicesFile = file("google-services.json")
+if (googleServicesFile.exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
+// RevenueCat's Google Play public API key is not a secret in the same sense as the Gemini/
+// signing keys, but is still project-specific local config kept out of source control (see
+// docs/agents or the setup wizard). Falls back to an empty string so the project still
+// compiles without it.
+val revenueCatPropertiesFile = rootProject.file("revenuecat.properties")
+val revenueCatProperties = Properties().apply {
+    if (revenueCatPropertiesFile.exists()) {
+        revenueCatPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     namespace = "com.smilestudio.android"
     compileSdk = libs.versions.androidCompileSdk.get().toInt()
@@ -30,6 +50,12 @@ android {
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1"
+
+        buildConfigField(
+            "String",
+            "REVENUECAT_API_KEY",
+            "\"${revenueCatProperties.getProperty("apiKey", "")}\"",
+        )
     }
 
     signingConfigs {
@@ -53,6 +79,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -69,5 +96,10 @@ dependencies {
     implementation(compose.foundation)
     implementation(compose.ui)
     implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.functions)
+    implementation(libs.revenuecat.purchases)
+    implementation(libs.revenuecat.purchases.ui)
     testImplementation(kotlin("test-junit"))
 }
