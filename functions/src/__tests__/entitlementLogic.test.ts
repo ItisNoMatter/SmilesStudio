@@ -13,7 +13,7 @@ describe("decideEntitlement", () => {
 
     const decision = decideEntitlement(state, CURRENT_MONTH);
 
-    expect(decision).toEqual({ allowed: true, nextState: state });
+    expect(decision).toEqual({ allowed: true, nextState: state, remainingFreeCount: null });
   });
 
   test("allows and increments free tier count when under the limit", () => {
@@ -28,6 +28,7 @@ describe("decideEntitlement", () => {
     expect(decision).toEqual({
       allowed: true,
       nextState: { isSubscribed: false, freeTierCount: 3, freeTierMonth: CURRENT_MONTH },
+      remainingFreeCount: 2,
     });
   });
 
@@ -55,6 +56,7 @@ describe("decideEntitlement", () => {
     expect(decision).toEqual({
       allowed: true,
       nextState: { isSubscribed: false, freeTierCount: 1, freeTierMonth: CURRENT_MONTH },
+      remainingFreeCount: 4,
     });
   });
 
@@ -64,6 +66,7 @@ describe("decideEntitlement", () => {
     expect(decision).toEqual({
       allowed: true,
       nextState: { isSubscribed: false, freeTierCount: 1, freeTierMonth: CURRENT_MONTH },
+      remainingFreeCount: 4,
     });
   });
 });

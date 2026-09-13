@@ -37,7 +37,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -52,23 +51,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.smilestudio.android.apikey.AndroidKeystoreApiKeyEncryptor
 import com.smilestudio.android.apikey.ApiKeyStore
 import com.smilestudio.android.apikey.SharedPreferencesKeyValueStore
 import com.smilestudio.android.recognition.AndroidImageResizer
+import com.smilestudio.android.recognition.FirebaseCloudRecognizer
 import com.smilestudio.android.recognition.ImageRecognitionCoordinator
 import com.smilestudio.android.recognition.ImageRecognitionOutcome
 import com.smilestudio.android.recognition.createCaptureImageUri
 import com.smilestudio.android.recognition.readImageBytes
+import com.smilestudio.android.subscription.SubscriptionPaywall
 import com.smilestudio.android.theme.expressivePressScale
 import com.smilestudio.vision.recognizeStructure
 import kotlinx.coroutines.launch
 
 private const val API_KEY_PREFS_NAME = "api_key_prefs"
 private const val PRIVACY_POLICY_URL = "https://itisnomatter.github.io/SmilesStudio/privacy-policy/"
-private const val MISSING_API_KEY_MESSAGE = "APIキーが設定されていません"
-private const val OPEN_SETTINGS_ACTION_LABEL = "設定を開く"
 private const val IMAGE_READ_FAILURE_MESSAGE = "画像の読み込みに失敗しました"
+private const val REMAINING_FREE_COUNT_MESSAGE_FORMAT = "あと%d回無料でご利用いただけます"
 
 private enum class AppTab(val label: String) {
     HOME("ホーム"),
@@ -83,6 +85,7 @@ fun SmilesStudioApp() {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showApiKeyDialog by remember { mutableStateOf(false) }
+    var showPaywall by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val apiKeyStore = remember {
@@ -105,6 +108,7 @@ fun SmilesStudioApp() {
             getApiKey = apiKeyStore::get,
             resizeImage = AndroidImageResizer::resize,
             recognize = ::recognizeStructure,
+            recognizeViaCloud = FirebaseCloudRecognizer::recognize,
         )
     }
 
@@ -122,17 +126,15 @@ fun SmilesStudioApp() {
                 isRecognizing = false
             }
             when (outcome) {
-                is ImageRecognitionOutcome.Recognized -> smilesText = outcome.smiles
-                is ImageRecognitionOutcome.Failed -> snackbarHostState.showSnackbar(outcome.reason)
-                ImageRecognitionOutcome.MissingApiKey -> {
-                    val result = snackbarHostState.showSnackbar(
-                        message = MISSING_API_KEY_MESSAGE,
-                        actionLabel = OPEN_SETTINGS_ACTION_LABEL,
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        showApiKeyDialog = true
+                is ImageRecognitionOutcome.Recognized -> {
+                    smilesText = outcome.smiles
+                    val remaining = outcome.remainingFreeCount
+                    if (remaining != null) {
+                        snackbarHostState.showSnackbar(REMAINING_FREE_COUNT_MESSAGE_FORMAT.format(remaining))
                     }
                 }
+                is ImageRecognitionOutcome.Failed -> snackbarHostState.showSnackbar(outcome.reason)
+                ImageRecognitionOutcome.FreeTierExhausted -> showPaywall = true
             }
         }
     }
@@ -286,6 +288,15 @@ fun SmilesStudioApp() {
             },
             onDismiss = { showApiKeyDialog = false },
         )
+    }
+
+    if (showPaywall) {
+        Dialog(
+            onDismissRequest = { showPaywall = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            SubscriptionPaywall(onDismiss = { showPaywall = false })
+        }
     }
 
     if (showImageSourceSheet) {

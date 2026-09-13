@@ -12,6 +12,7 @@ koogGoogleClient = "1.1.1-beta"
 googleServices = "4.5.0"
 firebaseBom = "34.19.0"
 revenuecatPurchases = "10.15.1"
+kotlinxCoroutinesPlayServices = "1.10.2"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -25,6 +26,7 @@ firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-functions = { module = "com.google.firebase:firebase-functions" }
 revenuecat-purchases = { module = "com.revenuecat.purchases:purchases", version.ref = "revenuecatPurchases" }
 revenuecat-purchases-ui = { module = "com.revenuecat.purchases:purchases-ui", version.ref = "revenuecatPurchases" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

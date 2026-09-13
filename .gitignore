@@ -18,3 +18,4 @@ keystore.properties
 *.keystore
 google-services.json
 revenuecat.properties
+firebase-debug.log

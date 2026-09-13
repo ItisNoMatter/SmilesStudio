@@ -5,7 +5,7 @@ export interface UserState {
 }
 
 export type EntitlementDecision =
-  | { allowed: true; nextState: UserState }
+  | { allowed: true; nextState: UserState; remainingFreeCount: number | null }
   | { allowed: false; reason: "free_tier_exhausted" };
 
 const FREE_TIER_MONTHLY_LIMIT = 5;
@@ -15,7 +15,7 @@ export function decideEntitlement(
   currentMonth: string,
 ): EntitlementDecision {
   if (state?.isSubscribed) {
-    return { allowed: true, nextState: state };
+    return { allowed: true, nextState: state, remainingFreeCount: null };
   }
 
   const isNewMonth = state === null || state.freeTierMonth !== currentMonth;
@@ -25,12 +25,14 @@ export function decideEntitlement(
     return { allowed: false, reason: "free_tier_exhausted" };
   }
 
+  const nextCount = currentCount + 1;
   return {
     allowed: true,
     nextState: {
       isSubscribed: state?.isSubscribed ?? false,
-      freeTierCount: currentCount + 1,
+      freeTierCount: nextCount,
       freeTierMonth: currentMonth,
     },
+    remainingFreeCount: FREE_TIER_MONTHLY_LIMIT - nextCount,
   };
 }

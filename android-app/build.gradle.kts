@@ -101,5 +101,6 @@ dependencies {
     implementation(libs.firebase.functions)
     implementation(libs.revenuecat.purchases)
     implementation(libs.revenuecat.purchases.ui)
+    implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(kotlin("test-junit"))
 }

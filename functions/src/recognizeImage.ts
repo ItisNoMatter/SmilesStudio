@@ -10,6 +10,7 @@ interface RecognizeImageRequest {
 
 interface RecognizeImageResponse {
   smiles: string;
+  remainingFreeCount: number | null;
 }
 
 export const recognizeImage = onCall<RecognizeImageRequest, Promise<RecognizeImageResponse>>(
@@ -39,6 +40,6 @@ export const recognizeImage = onCall<RecognizeImageRequest, Promise<RecognizeIma
       throw new HttpsError("internal", "画像から構造式を認識できませんでした。");
     }
 
-    return { smiles: result.smiles };
+    return { smiles: result.smiles, remainingFreeCount: decision.remainingFreeCount };
   },
 );
