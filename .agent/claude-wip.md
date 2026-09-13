@@ -1,171 +1,164 @@
 # Claude Code WIP メモ (SmilesStudio プロジェクト基盤構築)
 
-最終更新: 2026-09-09
+最終更新: 2026-09-13
 
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: Issue #18のPlay Console非公開テストが実際に開始（14日間カウント進行中）
+## ステータス: Issue #15/#16/#30が完了。Issue #17（課金）は設計完了・Firebase/RevenueCatセットアップ中（Play Console側の銀行口座確認待ちでブロック中）
 
-Issue #14（Koog/Gemini連携）・Issue #24（Safe Area対応）・Issue #25（Material 3
-Expressiveデザイン）・Issue #26（ストア掲載素材）に続き、Issue #18のPlay Console側の実操作
-（アプリ登録・ストア掲載情報・アプリのコンテンツ宣言・非公開テストトラック設定・テスター
-確保）を完了し、2026-09-09に非公開テストが正式に開始された（AnyAR 0034）。android-appは
-「ホーム」（SMILES入力→構造式描画）・「使い方」（記法解説）の2タブ構成、指定のpurple系
-カラースキーム、TopAppBar/NavigationBar、独自の分子構造アイコンを備え、実機（エミュレータ）
-で全機能を確認済み。プライバシーポリシーもGitHub Pagesで公開中。
+Issue #16（BYOK設定画面）・Issue #15（手描き構造式認識UI、実APIキーで動作確認済み）・
+Issue #30（プライバシーポリシー導線追加・本文更新）が完了・close済み。Issue #17
+（RevenueCat課金）は`/grill-with-docs`で設計を完了し（AnyDR 0112〜0125）、5つのsub-issue
+（#33〜#37）に分割。Issue #33（Firebase/RevenueCatプロジェクト設定）の大部分が完了したが、
+Play Console側の定期購入商品作成が「お支払いプロファイルの受け取り方法（銀行口座）確認待ち」
+で止まっている。次はIssue #34（Cloud Functions実装）に着手する。
 
-テスター確保はTesters Community経由（Googleグループ`testers-community@googlegroups.com`を
-Play Consoleのメーリングリストに追加済み）。14日間、12人以上のオプトイン状態を維持する
-必要がある（〜2026-09-23頃まで）。
+Issue #18（非公開テスト）は継続中（〜2026-09-23頃まで12人以上のオプトイン維持が必要）。
 
-## 直近セッションでやったこと（2026-09-09、Issue #18 Play Console実操作）
+## 直近セッションでやったこと（2026-09-12〜13、Issue #15/#16/#17/#30）
 
-*   コード変更なし（Play Console上での手動操作のみ）。当初`/wizard`スキルでbashウィザード
-    スクリプトを用意したが、実行中のスクリプトファイルを編集してしまい構文エラーで停止する
-    事故が発生。ユーザーの提案でウィザード方式をやめ、チャット上でスクリーンショットを
-    見ながら一つずつ対話的に案内する方式に切り替えた（詳細はAnyAR 0034参照）。
-*   Play Consoleでアプリを作成（パッケージ名`com.smilestudio.android`）、メインのストアの
-    掲載情報・ストアの設定（カテゴリ/連絡先）・アプリのコンテンツ宣言（プライバシー
-    ポリシーURL・広告なし・データセーフティ等）を入力。
-*   非公開テストトラックを作成しAABをアップロード、Googレビューに送信・通過。
-*   テスター確保サービスはTesters Community→決済失敗→onTest.app（Pros/Cons比較の上で選定）
-    →決済失敗→SwapTest（無料の相互テスト、Pros/Cons比較の上で選定）を検討したが、実行前に
-    Testers Communityの決済が最終的に通ったため、当初計画通りTesters Communityで完了。
-*   Testers CommunityのGoogleグループをPlay Consoleのテスターのメーリングリストに追加し、
-    非公開テストが正式に開始。AnyAR 0034を記録。
-
-## 過去セッションでやったこと（2026-09-06、Issue #24〜#27関連）
-
-1. Issue #24「Safe Area対応」: `/grill-with-docs`で設計（AnyDR 0079〜0083）。当初
-   「TextField画面上部固定」で進めていたが、ユーザー指摘で「TextField下部固定＋IME
-   パディング」に方針転換（AnyDR 0082が0081を撤回・置き換え）。実装後、`imePadding()`と
-   `windowInsetsPadding(safeDrawing.only(Bottom))`の二重適用でTextFieldがキーボードより
-   大きく浮くバグをユーザー報告で発見・修正（AnyAR 0029、`WindowInsets.safeDrawing`は
-   既に`ime`を含むため片方で足りることが原因）。コミット `449a228` ・ `4256992` 。
-2. Issue #25「Material 3 Expressiveデザイン」: ユーザー提示の詳細仕様に基づき実装
-   （コミット `492c35e` ）。JetBrains Compose Multiplatformのmaterial3
-   （`composeMultiplatform`バンドルの1.12.0-alpha03）では`MaterialExpressiveTheme`が
-   まだ`internal`で使えず、android-appはAndroid専用スコープのためAndroidX本家の
-   material3アルファ（1.5.0-alpha27）に直接依存する形で解決。実装後、「タップ時の
-   軽い縮小フィードバック」が実は機能していなかったバグ（`expressivePressScale()`の
-   `interactionSource`が対象コンポーネントと共有されておらず、押下イベントを一切
-   観測できていなかった）を発見・修正（AnyAR 0031、コミット `1b583f2` ）。
-3. Issue #18を`/grill-with-docs`で設計（AnyDR 0084〜0090）:
-   - 初回アップロードはmainブランチそのまま（#24・#25含む、AnyDR 0084）
-   - テスター確保は有料サービス「Testers Community」を利用（AnyDR 0085・0086）
-   - ストア掲載素材（アイコン・プライバシーポリシー・スクリーンショット）が一切
-     存在しないことが判明し、Issue #26として独立させ#18の`blocked_by`に設定
-     （AnyDR 0087）
-   - プライバシーポリシーはGitHub Pagesでホスト（AnyDR 0088）
-   - アイコンはClaudeがSVGで作成（AnyDR 0089）
-   - 英語対応は今回の提出に含めず、Play Consoleの14日カウントはアプリ更新で
-     リセットされないことを確認した上で、非公開テストと並行するIssue #27として
-     別進行に（AnyDR 0090）
-4. Issue #26「ストア掲載素材」を実施（AnyAR 0032）: 分子構造モチーフのアダプティブ
-   アイコンをSVGで作成、Android Studio「Image Asset Studio」で全サイズ・Play Store用
-   512x512アイコンを生成（コミット `281119f` 、副次的に`app_name`の表記ゆれ
-   「SmileStudio」→「SmilesStudio」も修正）。プライバシーポリシーを
-   `docs/privacy-policy/index.html`に作成しGitHub Pagesで公開
-   （https://itisnomatter.github.io/SmilesStudio/privacy-policy/ 、コミット `4714dc7` ）。
-   ストア用スクリーンショット2枚を`docs/store-assets/screenshots/`に保存
-   （コミット `fa3eac5` ）。Issue #26をclose。
+1. **Issue #16「BYOK設定画面」**: `/grill-with-docs`で設計（AnyDR 0091〜0101）。Android
+   Keystore暗号化＋`SharedPreferences`保存の`ApiKeyStore`をTDDで実装、`ApiKeySettingsDialog`
+   （マスク入力・削除ボタン・免責文言）を実装。エミュレータで保存・復元・削除を確認。
+   コミット `5bb5b73` 、AnyAR 0035。
+2. **Issue #15「手描き構造式認識UI」**: `/grill-with-docs`で設計（AnyDR 0102〜0108）。
+   カメラ撮影（`TakePicture`+`FileProvider`、権限不要）・ギャラリー選択
+   （`PickVisualMedia`、権限不要）・FAB＋`ModalBottomSheet`・全画面ローディング
+   オーバーレイ・Snackbarでのエラー表示を実装。`ImageRecognitionCoordinator`をTDDで実装。
+   実機確認中に`isRecognizing`がSnackbar表示完了まで`true`のままでオーバーレイが操作を
+   ブロックするバグを発見・修正。コミット `fd8685b` 。その後、実際のGemini APIキーで
+   検証したところ`gemini-2.5-flash`が新規ユーザー向けに404（廃止）となり
+   `gemini-3.5-flash`に切り替え（コミット `a912f4f` ）、ベンゼン環の実画像から`c1ccccc1`
+   認識を確認。AnyAR 0036。
+3. **Koog Strategy Graphの調査**: `vision-recognition`は未使用（Prompt Executor層のみ）
+   であることを確認しHTMLアーティファクトで図解。将来の技術検証としてIssue #29
+   （パーサー検証つき自己修正ループ）を起票。
+4. **Issue #30「アプリ内プライバシーポリシー導線」**: `/grill-with-docs`で設計
+   （AnyDR 0109〜0111）。「このアプリについて」ダイアログにリンク追加（外部ブラウザで
+   開く）。プライバシーポリシー本文がIssue #15/#16実装後も「送信しません」のまま実態と
+   食い違っていたことに気づき、同時に更新。コミット `3a78837` 、AnyAR 0036。
+5. **Issue #17「RevenueCat課金」設計**: `/grill-with-docs`で設計（AnyDR 0112〜0125）。
+   無料枠月5回（X/Discordでの問いかけ結果）、価格月額480円/年額3,600円、暦月リセット、
+   RevenueCat Paywalls採用。設計途中で「BYOKを使わない全ユーザー向けのAPIキーをどこに
+   置くか」が未決だったことが発覚し、Firebase Cloud Functions（Node.js）でGeminiキーを
+   サーバー側に保持する方針に転換（無料枠カウンターもFirestoreへ移行、AnyDR 0117を
+   AnyDR 0124で撤回）。価格の採算試算も実施（有料1人で無料70〜90人分をカバー可能）。
+   有料プランへの利用上限は導入しない（AnyDR 0125）。Issue #17を5つのsub-issue
+   （#33〜#37）に分割し依存関係を設定。AnyAR 0037。
+6. **Issue #33「Firebase/RevenueCatプロジェクト設定」着手**: Firebaseプロジェクト作成、
+   Firebase Auth匿名認証有効化、Firestore作成（デフォルト全拒否ルール維持）、RevenueCat
+   アカウント・Androidアプリ登録、GCPサービスアカウント作成・JSONキー発行・Play Console
+   側権限付与、RevenueCatエンタイトルメント`pro`作成まで完了。Play Console側の定期購入
+   商品作成が「作成」ボタン非表示で詰まり、原因調査の結果お支払いプロファイルの受け取り
+   方法（銀行口座）が未登録と判明し登録したが、「確認待ち」のままボタンは出ず未解決
+   （原因未確定、銀行口座確認完了待ちと推測）。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
-- `0001`〜`0078`: 前回までに反映済み（詳細は割愛）。
-- `0079`〜`0083`（Safe Area設計、途中でTextField位置を撤回・変更）: **実装済み**
-  （Issue #24）。
-- `0084`（Play Console初回アップロードは#24・#25を除外しない）: **実装済み**（Issue #18）。
-- `0085`・`0086`（テスター確保は有料サービス、Testers Community使用）: **実行済み**
-  （Issue #18、onTest.app/SwapTestを一時検討したが最終的に当初計画通りTesters Communityで
-  実行。詳細はAnyAR 0034）。
-- `0087`（ストア掲載素材を独立Issue化）・`0088`（プライバシーポリシーはGitHub Pages）・
-  `0089`（アイコンはClaudeがSVGで作成）: **実装済み**（Issue #26）。
-- `0090`（英語対応はIssue #18と並行する別Issue #27で進める）: **Issue化のみ**
-  （実装未着手）。
+- `0001`〜`0090`: 前回までに反映済み（詳細は過去のWIPノート参照）。
+- `0091`〜`0101`（BYOK設定画面）: **実装済み**（Issue #16）。
+- `0102`〜`0108`（画像入力・FAB・ローディング・エラー表示・リサイズ）: **実装済み**
+  （Issue #15）。
+- `0109`〜`0111`（プライバシーポリシー導線・本文更新）: **実装済み**（Issue #30）。
+- `0112`〜`0125`（課金パラメータ・サーバーレス構成）: **設計のみ**、実装はsub-issue
+  #33〜#37で進行中（#33一部完了、#34〜#37未着手）。
 
 ## 現在のプロジェクト構成
 
 ```
-core-smiles/, ui-compose/（MoleculeCanvas.kt, MoleculeDrawing.kt, MoleculeEditor.kt）:
-  前回までと変更なし（詳細は過去のWIPノート参照）
+core-smiles/, ui-compose/: 前回までと変更なし
 
-vision-recognition/: 前回までと変更なし
+vision-recognition/src/commonMain/kotlin/com/smilestudio/vision/
+  RecognizeStructure.kt  GoogleModels.Gemini3_5Flash使用（2.5-flash廃止対応）
+  RunRecognition.kt      変更なし（例外→Failure変換、レート制限文字列マッチング）
 
-android-app/src/main/
-  AndroidManifest.xml    android:icon/roundIconを追加
-  MainActivity.kt        SmilesStudioTheme { Surface { SmilesStudioApp() } }
-  SmilesStudioApp.kt     【新規】Scaffold（TopAppBar+NavigationBar）、ホーム/使い方タブの
-                         AnimatedContent切り替え、more_vertメニュー、タップ時の縮小
-                         フィードバック（expressivePressScale、全タップ要素に配線済み）
-  HomeContent.kt         【新規】MoleculeCanvas＋OutlinedTextField（resolveMoleculeEditorState
-                         を再利用、MoleculeEditor.ktとは別実装）
-  HowToContent.kt        【新規】SMILES記法6例をライブプレビュー付きで一覧表示
-  theme/Theme.kt         【新規】MaterialExpressiveTheme＋指定カラースキーム
-  theme/PressScale.kt    【新規】expressivePressScale() Modifier（interactionSource必須引数）
-  res/drawable/ic_launcher_{background,foreground}.xml  【新規】分子構造モチーフのベクター
-  res/mipmap-*/          【新規】アダプティブアイコン各サイズ・モノクロレイヤー
-  res/values/strings.xml app_nameを「SmilesStudio」に修正
-  ic_launcher-playstore.png  【新規】Play Store掲載用512x512アイコン（build対象外、素材のみ）
+android-app/src/main/kotlin/com/smilestudio/android/
+  MainActivity.kt, SmilesStudioApp.kt  Scaffold＋FAB＋Snackbar＋各種ダイアログ統括
+  HomeContent.kt          MoleculeCanvas上にFAB（画像から認識）を配置
+  HowToContent.kt         変更なし
+  ApiKeySettingsDialog.kt 【Issue #16】マスク入力・表示切替・削除ボタン・免責文言
+  ImageSourceBottomSheet.kt 【Issue #15】カメラ/ギャラリー選択ボトムシート
+  RecognitionLoadingOverlay.kt 【Issue #15】全画面ローディングオーバーレイ
+  apikey/                 【Issue #16】ApiKeyStore, ApiKeyEncryptor,
+                          AndroidKeystoreApiKeyEncryptor, KeyValueStore,
+                          SharedPreferencesKeyValueStore
+  recognition/            【Issue #15】ImageRecognitionCoordinator（TDD済み）,
+                          ImageRecognitionOutcome, AndroidImageResizer, ImageIo
+  theme/                  変更なし
 
-build.gradle.kts（android-app）:
-  androidx.compose.material3:material3:1.5.0-alpha27 に直接依存（JetBrains CMPのmaterial3
-  ではMaterialExpressiveThemeがinternalなため）。compose.materialIconsExtendedも追加。
+android-app/src/test/kotlin/com/smilestudio/android/
+  apikey/ApiKeyStoreTest.kt, recognition/ImageRecognitionCoordinatorTest.kt
+
+android-app/src/main/AndroidManifest.xml
+  FileProvider追加（file_paths.xml、カメラ撮影用）
+
+android-app/build.gradle.kts
+  project(":vision-recognition")依存追加、kotlin("test-junit")追加
 
 docs/
-  any-decision-record/  0001〜0090（en/は一部のみオンデマンド生成、欠番は正常）
-  any-action-record/    0001〜0032（en/は一部のみ）
-  privacy-policy/index.html  【新規】GitHub Pagesで公開中
-  store-assets/screenshots/  【新規】ホーム・使い方タブのスクリーンショット2枚
-  .nojekyll              【新規】GitHub PagesのJekyll処理を無効化
+  any-decision-record/  0001〜0125（en/は一部のみ）
+  any-action-record/    0001〜0037（en/は一部のみ）
+  privacy-policy/index.html  Issue #15/#16実装済み機能を反映して更新済み
 
-GitHub Pages: main branch /docs から配信、有効化済み・ビルド確認済み
-  https://itisnomatter.github.io/SmilesStudio/privacy-policy/
+GitHub Pages: https://itisnomatter.github.io/SmilesStudio/privacy-policy/ （公開中）
 
-keystore.properties, ~/.smilestudio-keys/upload-keystore.jks
-  gitignore対象・リポジトリ外、このマシンにのみ存在（変更なし）
+【新規、このマシン上のみ・リポジトリ外】
+  Firebaseプロジェクト「SmilesStudio」: Auth（匿名）・Firestore（asia-northeast1）作成済み
+  RevenueCatプロジェクト「SmilesStudio」: Androidアプリ登録済み、エンタイトルメント`pro`作成済み、
+    Service Account Credentials JSONアップロード済み（検証は伝播待ち〜銀行口座確認待ち）
+  GCPサービスアカウント revenuecat-service-account@smilestudio-116a8.iam.gserviceaccount.com
+    （Pub/Sub編集者・モニタリング閲覧者ロール、Play Console側にも招待済み）
 
-GitHub Issues（2マップ体制）:
-  Issue #1  マップ「SmilesStudio v1」: #2〜#8クローズ済み。フロンティア: #9→#10
-  Issue #11 マップ「Shipaton 2026」（子Issue14件、#24〜#27を今セッションで追加）:
-    #12,#13,#14,#24,#25,#26 クローズ済み。#18は非公開テスト実行中（未close、14日間経過待ち）。
-    フロンティア: #15,#16,#17,#22（Phase 2、未着手）、#27（英語対応、非公開テストと並行進行）
-GitHubマイルストーン: Phase 1（期限2026-09-08、経過）。#18の非公開テストは2026-09-09開始、
-  〜2026-09-23頃まで12人以上のオプトイン維持が必要。Phase 2（期限2026-09-22）。
+GitHub Issues:
+  Issue #11 マップ「Shipaton 2026」:
+    #12,#13,#14,#15,#16,#24,#25,#26,#30 クローズ済み。#18は非公開テスト実行中（未close）。
+    #17は5つのsub-issueに分割（#33一部完了、#34〜#37未着手）。
+    フロンティア: #22（テストハーネス）、#27（英語対応）、#28（複数プロバイダ対応、将来）、
+    #29（Strategy Graph技術検証、将来）、#31（本番リリース国/地域設定、Issue #23の子）、
+    #32（無料枠カウンター再インストール回避、AnyDR 0124で解消見込みだが未close）
 ```
 
 ## ⚠️ コードと決定のズレ
 
-- Issue #27（英語対応）: Issueは作成したが実装は未着手。全UI文字列が`strings.xml`化
-  されておらずKotlinコードに直書きのまま。
-- Issue #15（手描き認識UI）・#16（BYOK設定画面）・#17（RevenueCat課金）: 依存解消済みだが
-  未着手のまま。`0036`（B/C課金プラン方針）は未反映。
+- Issue #17: AnyDR 0112〜0125で設計は完了しているが、コード実装は未着手（sub-issue
+  #33〜#37で今後進める。#33のみ一部完了）。
+- Issue #27（英語対応）: Issueは作成したが実装は未着手。
 - `0037`のテストハーネス層（三層防御OSS戦略）→ Issue #22: 未実装。
+- Issue #17実装完了後、RevenueCat/Firebase Auth導入を反映したプライバシーポリシーの
+  再更新が必要（今回のIssue #30の対応範囲外として明示的に先送りした）。
+- Issue #32（無料枠カウンターの再インストール回避）: AnyDR 0124の方針転換で実質解消見込み
+  だが、まだcloseしていない。
 
 ## 既知の注意点（未対応・要フォローアップ）
 
 1. レート制限の判定はKoogの例外メッセージの文字列マッチングに依存する脆い実装（AnyDR 0078）。
    JetBrains/koogのYouTrack [KG-652](https://youtrack.jetbrains.com/issue/KG-652)にユーザーが
-   コメント投稿済み（現状の回避策を共有）。解決されれば置き換え候補。
+   コメント投稿済み。解決されれば置き換え候補。
 2. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
 3. `Molecule.rings`のDFS背後辺方式・`computeLayout`の固定角度配置は縮合環・橋かけ環を正しく
    扱えない（v1スコープでは問題ない）。
-4. 有料プランの具体的価格・使用上限（レート制限）は未決定のまま。
-5. `ai.koog:prompt-executor-google-client`は`koog-agents`本体（1.2.0安定版）とは独立
-   バージョニングでまだbeta（1.1.1-beta）。
-6. android-appは`androidx.compose.material3:material3:1.5.0-alpha27`という不安定版
-   （Expressive API公開待ち）に直接依存している。将来安定版で`MaterialExpressiveTheme`が
-   公開されたら、JetBrains CMP側のmaterial3に戻すか検討の余地あり。
-7. このマシンのAndroid SDKは`D:\Android\Sdk`（`GRADLE_USER_HOME`も`D:\Android\.gradle`）。
-   AVD`SmileStudio_Test`（API 36）が1件作成済み。エミュレータは長時間セッションで
-   メモリ逼迫（swap多用）しやすく、ANRや起動遅延が起きることがある。
+4. `ai.koog:prompt-executor-google-client`は`koog-agents`本体（1.2.0安定版）とは独立
+   バージョニングでまだbeta（1.1.1-beta）。Geminiのモデル廃止（2.5-flash→3.5-flash対応済み）
+   のように、今後も上流のモデルライフサイクル変化への追従が必要になる可能性がある。
+5. android-appは`androidx.compose.material3:material3:1.5.0-alpha27`という不安定版に
+   直接依存している。将来安定版で解決されたらJetBrains CMP側のmaterial3に戻すか検討の余地
+   あり。
+6. このマシンのAndroid SDKは`D:\Android\Sdk`。AVD`SmileStudio_Test`（API 36）が1件作成済み。
+   エミュレータは長時間セッションでメモリ逼迫しやすく、ANRや起動遅延・システムカメラアプリの
+   ANRが起きることがある（Issue #15検証時に発生、実機ではユーザーが手動確認）。
+7. Play Console側で定期購入商品の「作成」ボタンが表示されない問題が未解決。お支払い
+   プロファイルの受け取り方法（銀行口座）を登録したが「確認待ち」のまま変化なし。原因は
+   未確定（銀行口座確認完了待ちと推測）。数日待って再確認するか、Play Consoleサポートへの
+   問い合わせが必要かもしれない。
 
 ## 次にやりそうなこと（未着手）
 
-- **Issue #18の残り**: 14日間（〜2026-09-23頃）、Testers Community経由のテスターが
-  12人以上オプトインした状態を維持できているか定期的に確認。維持できたら本番アクセス申請
-  （Issue #23、未作成）に進む。Claude側では代行不可、ユーザー主導。
-- 並行着手可能: Issue #27（英語対応）・#15（手描き認識UI）・#16（BYOK設定画面）・#17
-  （RevenueCat課金）。
-- 14日間経過後: 本番アクセス申請（Issue #23）→ Devpost提出（Issue #19）。
+- **Issue #34「サーバーレス関数（画像認識プロキシ）の実装」**: 次に着手する想定。Issue #33の
+  Play Console側ブロックとは独立に進められる。
+- **Issue #33の残り**: 銀行口座確認完了待ち→Play Console定期購入商品作成→RevenueCatの
+  Offering/Paywallデザイン→Webhook設定（Issue #34のCloud Functionsのエンドポイント確定後）。
+- Issue #18: 〜2026-09-23頃まで、Testers Community経由のテスターが12人以上オプトインした
+  状態を維持できているか定期的に確認。
+- 並行着手可能: Issue #27（英語対応）・#22（テストハーネス）。
+- Issue #17完了後: プライバシーポリシーの再更新（RevenueCat/Firebase Auth導入を反映）。
