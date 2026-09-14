@@ -1,119 +1,127 @@
 # Claude Code WIP メモ (SmilesStudio プロジェクト基盤構築)
 
-最終更新: 2026-09-13
+最終更新: 2026-09-14
 
 このファイルはClaude Codeとの作業セッションが中断された際の再開用メモ。
 セッション再起動後は、まずこのファイルを読んでから作業を再開すること。
 
-## ステータス: Issue #15/#16/#30が完了。Issue #17（課金）は設計完了・Firebase/RevenueCatセットアップ中（Play Console側の銀行口座確認待ちでブロック中）
+## ステータス: Issue #34/#35実装完了、Issue #36実装完了・実機検証待ち。FirebaseプロジェクトをsmilesstudioTest-309a5に移行済み
 
-Issue #16（BYOK設定画面）・Issue #15（手描き構造式認識UI、実APIキーで動作確認済み）・
-Issue #30（プライバシーポリシー導線追加・本文更新）が完了・close済み。Issue #17
-（RevenueCat課金）は`/grill-with-docs`で設計を完了し（AnyDR 0112〜0125）、5つのsub-issue
-（#33〜#37）に分割。Issue #33（Firebase/RevenueCatプロジェクト設定）の大部分が完了したが、
-Play Console側の定期購入商品作成が「お支払いプロファイルの受け取り方法（銀行口座）確認待ち」
-で止まっている。次はIssue #34（Cloud Functions実装）に着手する。
+Issue #17（RevenueCat課金）のsub-issue群のうち、#34（Cloud Functionsプロキシ）・#35
+（Firebase Auth/RevenueCat SDK統合）は実装・テストGREEN・実機検証済み。#36
+（`ImageRecognitionCoordinator`の非BYOKクラウド経路対応）も実装・テストGREEN済みだが、
+実機での最終確認はこれから。#33（Firebase/RevenueCatプロジェクト設定）は引き続き
+Play Console側の支払いプロファイル確認待ちでブロック中。
 
-Issue #18（非公開テスト）は継続中（〜2026-09-23頃まで12人以上のオプトイン維持が必要）。
+**重要**: Firebaseプロジェクトを`smilestudio-116a8`から`smilesstudio-309a5`に移行した
+（詳細は「⚠️ コードと決定のズレ」参照）。旧プロジェクトの扱い（削除するか放置するか）は
+未決定。
 
-## 直近セッションでやったこと（2026-09-12〜13、Issue #15/#16/#17/#30）
+## 直近セッションでやったこと（2026-09-13〜14、Issue #34/#35/#36）
 
-1. **Issue #16「BYOK設定画面」**: `/grill-with-docs`で設計（AnyDR 0091〜0101）。Android
-   Keystore暗号化＋`SharedPreferences`保存の`ApiKeyStore`をTDDで実装、`ApiKeySettingsDialog`
-   （マスク入力・削除ボタン・免責文言）を実装。エミュレータで保存・復元・削除を確認。
-   コミット `5bb5b73` 、AnyAR 0035。
-2. **Issue #15「手描き構造式認識UI」**: `/grill-with-docs`で設計（AnyDR 0102〜0108）。
-   カメラ撮影（`TakePicture`+`FileProvider`、権限不要）・ギャラリー選択
-   （`PickVisualMedia`、権限不要）・FAB＋`ModalBottomSheet`・全画面ローディング
-   オーバーレイ・Snackbarでのエラー表示を実装。`ImageRecognitionCoordinator`をTDDで実装。
-   実機確認中に`isRecognizing`がSnackbar表示完了まで`true`のままでオーバーレイが操作を
-   ブロックするバグを発見・修正。コミット `fd8685b` 。その後、実際のGemini APIキーで
-   検証したところ`gemini-2.5-flash`が新規ユーザー向けに404（廃止）となり
-   `gemini-3.5-flash`に切り替え（コミット `a912f4f` ）、ベンゼン環の実画像から`c1ccccc1`
-   認識を確認。AnyAR 0036。
-3. **Koog Strategy Graphの調査**: `vision-recognition`は未使用（Prompt Executor層のみ）
-   であることを確認しHTMLアーティファクトで図解。将来の技術検証としてIssue #29
-   （パーサー検証つき自己修正ループ）を起票。
-4. **Issue #30「アプリ内プライバシーポリシー導線」**: `/grill-with-docs`で設計
-   （AnyDR 0109〜0111）。「このアプリについて」ダイアログにリンク追加（外部ブラウザで
-   開く）。プライバシーポリシー本文がIssue #15/#16実装後も「送信しません」のまま実態と
-   食い違っていたことに気づき、同時に更新。コミット `3a78837` 、AnyAR 0036。
-5. **Issue #17「RevenueCat課金」設計**: `/grill-with-docs`で設計（AnyDR 0112〜0125）。
-   無料枠月5回（X/Discordでの問いかけ結果）、価格月額480円/年額3,600円、暦月リセット、
-   RevenueCat Paywalls採用。設計途中で「BYOKを使わない全ユーザー向けのAPIキーをどこに
-   置くか」が未決だったことが発覚し、Firebase Cloud Functions（Node.js）でGeminiキーを
-   サーバー側に保持する方針に転換（無料枠カウンターもFirestoreへ移行、AnyDR 0117を
-   AnyDR 0124で撤回）。価格の採算試算も実施（有料1人で無料70〜90人分をカバー可能）。
-   有料プランへの利用上限は導入しない（AnyDR 0125）。Issue #17を5つのsub-issue
-   （#33〜#37）に分割し依存関係を設定。AnyAR 0037。
-6. **Issue #33「Firebase/RevenueCatプロジェクト設定」着手**: Firebaseプロジェクト作成、
-   Firebase Auth匿名認証有効化、Firestore作成（デフォルト全拒否ルール維持）、RevenueCat
-   アカウント・Androidアプリ登録、GCPサービスアカウント作成・JSONキー発行・Play Console
-   側権限付与、RevenueCatエンタイトルメント`pro`作成まで完了。Play Console側の定期購入
-   商品作成が「作成」ボタン非表示で詰まり、原因調査の結果お支払いプロファイルの受け取り
-   方法（銀行口座）が未登録と判明し登録したが、「確認待ち」のままボタンは出ず未解決
-   （原因未確定、銀行口座確認完了待ちと推測）。
+1. **Issue #34「サーバーレス関数（画像認識プロキシ）の実装」**: `/grill-with-docs`で設計
+   （AnyDR 0126〜0129）。Callable Functions・Secret ManagerでのGeminiキー保持・
+   Firestore単一ドキュメントモデル・`@google/genai`公式SDKを採用。TDDで
+   `entitlementLogic.ts`（純粋関数）を実装、`recognizeImage`・`revenueCatWebhook`を実装。
+   コミット `d3fa833`、AnyAR 0038。
+2. **Issue #35「Firebase Auth・RevenueCat SDK統合」**: `/grill-with-docs`で設計
+   （AnyDR 0130〜0132）。`SmilesStudioApplication`で起動時に匿名認証→RevenueCat初期化、
+   `SubscriptionStatus`（Compose State）、`SubscriptionPaywall`（RevenueCat Paywalls UI
+   ラッパー）を実装。`PaywallOptions.Builder`の引数名がドキュメントと違う
+   （`dismissRequest`が正解）バグを、インストール済みAARのバイトコードを直接読んで解決。
+   実機ログでUID一致・リスナー発火を確認。コミット `fcdf014`、AnyAR 0039。
+3. **Issue #36「Coordinatorの購読/無料枠対応拡張」設計・実装**: `/grill-with-docs`で設計
+   （AnyDR 0133〜0136）。`recognizeImage`のレスポンスに残り回数を追加、検知方式は
+   リアクティブ（毎回サーバーに問い合わせ）、`ImageRecognitionOutcome`は
+   `Recognized(smiles, remainingFreeCount: Int?)`＋`FreeTierExhausted`に変更
+   （`MissingApiKey`は削除）。TDDのRED確認で「TODO()による例外落ちは何も証明しない」と
+   指摘を受け、「固定の間違った値を返すだけのブラックボックスなスタブ」に差し替える手法に
+   切り替えた（各テストのアサーションが実際に値を検査していることを確認できた）。
+   コミット `e320ace`、AnyAR 0040。
+4. **Firebaseプロジェクトの権限問題→移行**: 変更したCloud Functionsを旧プロジェクト
+   `smilestudio-116a8`に再デプロイしようとしたところ、IAMコンソール上は「オーナー」だが
+   `testIamPermissions`は空、という食い違いに遭遇。Blazeプラン・Firebase Management API・
+   Cloud Resource Manager APIの有効化、一晩の待機でも解消せず、新規Firebaseプロジェクト
+   `smilesstudio-309a5`を作成して移行した。移行の過程でFirebase CLI（v13.7.0→v15.30.0）・
+   ローカルNode.js（v18.14.1→v24.19.0、winget経由）・`functions/package.json`の
+   `engines.node`（18→20）も更新。新プロジェクトへのデプロイは成功
+   （`recognizeImage`・`revenueCatWebhook`とも`us-central1`）。AnyAR 0041。
 
 ## 確定した決定事項（AnyDRに記録済み）
 
-- `0001`〜`0090`: 前回までに反映済み（詳細は過去のWIPノート参照）。
-- `0091`〜`0101`（BYOK設定画面）: **実装済み**（Issue #16）。
-- `0102`〜`0108`（画像入力・FAB・ローディング・エラー表示・リサイズ）: **実装済み**
-  （Issue #15）。
-- `0109`〜`0111`（プライバシーポリシー導線・本文更新）: **実装済み**（Issue #30）。
-- `0112`〜`0125`（課金パラメータ・サーバーレス構成）: **設計のみ**、実装はsub-issue
-  #33〜#37で進行中（#33一部完了、#34〜#37未着手）。
+- `0001`〜`0125`: 前回までに反映済み（詳細は過去のWIPノート参照）。
+- `0126`〜`0129`（Callable Functions・Secret Manager・Firestore単一ドキュメント・
+  公式SDK）: **実装済み**（Issue #34）。
+- `0130`〜`0132`（起動時匿名認証・リスナーでの購読状態・Applicationクラス）:
+  **実装済み**（Issue #35）。
+- `0133`〜`0136`（残り回数のレスポンス契約・リアクティブ検知・Outcome型・Auth待機なし）:
+  **実装済み**（Issue #36）。実機での最終確認は未実施。
 
 ## 現在のプロジェクト構成
 
 ```
 core-smiles/, ui-compose/: 前回までと変更なし
 
-vision-recognition/src/commonMain/kotlin/com/smilestudio/vision/
-  RecognizeStructure.kt  GoogleModels.Gemini3_5Flash使用（2.5-flash廃止対応）
-  RunRecognition.kt      変更なし（例外→Failure変換、レート制限文字列マッチング）
+vision-recognition/: 前回までと変更なし（Gemini3_5Flash使用）
 
 android-app/src/main/kotlin/com/smilestudio/android/
-  MainActivity.kt, SmilesStudioApp.kt  Scaffold＋FAB＋Snackbar＋各種ダイアログ統括
-  HomeContent.kt          MoleculeCanvas上にFAB（画像から認識）を配置
-  HowToContent.kt         変更なし
-  ApiKeySettingsDialog.kt 【Issue #16】マスク入力・表示切替・削除ボタン・免責文言
-  ImageSourceBottomSheet.kt 【Issue #15】カメラ/ギャラリー選択ボトムシート
+  MainActivity.kt, SmilesStudioApp.kt  Scaffold＋FAB＋Snackbar＋各種ダイアログ＋Paywall統括
+  SmilesStudioApplication.kt 【Issue #35】起動時匿名認証→RevenueCat初期化
+  HomeContent.kt, HowToContent.kt      変更なし
+  ApiKeySettingsDialog.kt    【Issue #16】マスク入力・表示切替・削除ボタン・免責文言
+  ImageSourceBottomSheet.kt  【Issue #15】カメラ/ギャラリー選択ボトムシート
   RecognitionLoadingOverlay.kt 【Issue #15】全画面ローディングオーバーレイ
-  apikey/                 【Issue #16】ApiKeyStore, ApiKeyEncryptor,
-                          AndroidKeystoreApiKeyEncryptor, KeyValueStore,
-                          SharedPreferencesKeyValueStore
-  recognition/            【Issue #15】ImageRecognitionCoordinator（TDD済み）,
-                          ImageRecognitionOutcome, AndroidImageResizer, ImageIo
-  theme/                  変更なし
+  apikey/                    【Issue #16】ApiKeyStore, ApiKeyEncryptor,
+                             AndroidKeystoreApiKeyEncryptor, KeyValueStore,
+                             SharedPreferencesKeyValueStore
+  recognition/               【Issue #15/#36】ImageRecognitionCoordinator（BYOK/クラウド
+                             2経路、TDD済み）, ImageRecognitionOutcome
+                             （Recognized/Failed/FreeTierExhausted）,
+                             CloudRecognitionResult, FirebaseCloudRecognizer
+                             （imperative shell、Callable Function呼び出し）,
+                             AndroidImageResizer, ImageIo
+  subscription/              【Issue #35】SubscriptionStatus（Compose State）,
+                             Paywall（SubscriptionPaywall、RevenueCat Paywalls UIラッパー）
+  theme/                     変更なし
 
 android-app/src/test/kotlin/com/smilestudio/android/
   apikey/ApiKeyStoreTest.kt, recognition/ImageRecognitionCoordinatorTest.kt
+  （BYOK/クラウド両経路、5テストケース、全GREEN）
 
-android-app/src/main/AndroidManifest.xml
-  FileProvider追加（file_paths.xml、カメラ撮影用）
-
-android-app/build.gradle.kts
-  project(":vision-recognition")依存追加、kotlin("test-junit")追加
+functions/ 【Issue #34、Node.js/TypeScript、Gradleビルド対象外】
+  src/entitlementLogic.ts    純粋関数、TDD済み、5テストGREEN
+  src/firestoreEntitlement.ts  Firestoreトランザクションラッパー
+  src/geminiClient.ts        @google/genai公式SDK
+  src/recognizeImage.ts      Callable Function（smiles + remainingFreeCount返却）
+  src/revenueCatWebhook.ts   RevenueCat Webhook受信（isSubscribed更新）
+  src/index.ts               エクスポート
+  engines.node: "20"（package.json、Node 18廃止対応で更新）
 
 docs/
-  any-decision-record/  0001〜0125（en/は一部のみ）
-  any-action-record/    0001〜0037（en/は一部のみ）
+  any-decision-record/  0001〜0136（en/は一部のみ）
+  any-action-record/    0001〜0041（en/は一部のみ）
   privacy-policy/index.html  Issue #15/#16実装済み機能を反映して更新済み
 
 GitHub Pages: https://itisnomatter.github.io/SmilesStudio/privacy-policy/ （公開中）
 
 【新規、このマシン上のみ・リポジトリ外】
-  Firebaseプロジェクト「SmilesStudio」: Auth（匿名）・Firestore（asia-northeast1）作成済み
-  RevenueCatプロジェクト「SmilesStudio」: Androidアプリ登録済み、エンタイトルメント`pro`作成済み、
-    Service Account Credentials JSONアップロード済み（検証は伝播待ち〜銀行口座確認待ち）
-  GCPサービスアカウント revenuecat-service-account@smilestudio-116a8.iam.gserviceaccount.com
-    （Pub/Sub編集者・モニタリング閲覧者ロール、Play Console側にも招待済み）
+  Firebaseプロジェクト「SmilesStudio」（ID: smilesstudio-309a5、2026-09-14作成）:
+    Auth（匿名）・Firestore（asia-northeast1、ロックモード）・Blazeプラン・
+    Secret Manager（GEMINI_API_KEY・REVENUECAT_WEBHOOK_SECRET）設定済み。
+    Cloud Functionsデプロイ済み（recognizeImage・revenueCatWebhook、us-central1）。
+    android-app/google-services.json も新プロジェクトのものに差し替え済み。
+  旧Firebaseプロジェクト「SmilesStudio」（ID: smilestudio-116a8）: IAMの原因不明の不整合
+    により放棄。削除するか調査を続けるかは未決定（下記「既知の注意点」参照）。
+  RevenueCatプロジェクト「SmilesStudio」: エンタイトルメント`pro`作成済みだが、
+    Google Play連携（サービスアカウント認証情報）・Webhook URLは旧プロジェクト向けの
+    ままで未更新（下記「⚠️ コードと決定のズレ」参照）。
 
 GitHub Issues:
   Issue #11 マップ「Shipaton 2026」:
     #12,#13,#14,#15,#16,#24,#25,#26,#30 クローズ済み。#18は非公開テスト実行中（未close）。
-    #17は5つのsub-issueに分割（#33一部完了、#34〜#37未着手）。
+    #17は5つのsub-issueに分割: #34/#35 実装済み（未close）、#36 実装済み・実機検証待ち、
+    #33 一部完了・Play Console決済プロファイル待ちでブロック中、#37 未着手。
+    #38（匿名認証失敗時のハンドリング未実装、#35の実装漏れ、Issue #36中に発見）新規。
     フロンティア: #22（テストハーネス）、#27（英語対応）、#28（複数プロバイダ対応、将来）、
     #29（Strategy Graph技術検証、将来）、#31（本番リリース国/地域設定、Issue #23の子）、
     #32（無料枠カウンター再インストール回避、AnyDR 0124で解消見込みだが未close）
@@ -121,44 +129,50 @@ GitHub Issues:
 
 ## ⚠️ コードと決定のズレ
 
-- Issue #17: AnyDR 0112〜0125で設計は完了しているが、コード実装は未着手（sub-issue
-  #33〜#37で今後進める。#33のみ一部完了）。
+- **Firebaseプロジェクト移行に伴う未更新箇所**: RevenueCatダッシュボードのGoogle Play連携
+  （サービスアカウント認証情報）とWebhook URLが、まだ旧プロジェクト`smilestudio-116a8`
+  向けの設定のまま。新プロジェクト`smilesstudio-309a5`向けに更新する必要がある
+  （Play Console決済プロファイルのブロックが解消してから着手するのが自然）。
+- Issue #36: コード実装・自動テストはGREENだが、実機（エミュレータ/実機）でクラウド経路の
+  動作確認がまだ済んでいない。次にやるべきこと。
 - Issue #27（英語対応）: Issueは作成したが実装は未着手。
 - `0037`のテストハーネス層（三層防御OSS戦略）→ Issue #22: 未実装。
-- Issue #17実装完了後、RevenueCat/Firebase Auth導入を反映したプライバシーポリシーの
-  再更新が必要（今回のIssue #30の対応範囲外として明示的に先送りした）。
+- Issue #17完全実装後、RevenueCat/Firebase Auth導入を反映したプライバシーポリシーの
+  再更新が必要（Issue #30の対応範囲外として明示的に先送りした）。
 - Issue #32（無料枠カウンターの再インストール回避）: AnyDR 0124の方針転換で実質解消見込み
   だが、まだcloseしていない。
 
 ## 既知の注意点（未対応・要フォローアップ）
 
-1. レート制限の判定はKoogの例外メッセージの文字列マッチングに依存する脆い実装（AnyDR 0078）。
+1. **旧Firebaseプロジェクト`smilestudio-116a8`のIAM不整合**: IAMコンソール上は
+   オーナーロールが正しく表示・保存されているのに、`testIamPermissions`が実効権限ゼロを
+   返す状態が、Blazeプラン・複数API有効化・一晩の待機でも解消しなかった。原因未特定のまま
+   新プロジェクトへ移行した。この旧プロジェクトを削除するかどうかは未決定（残しておくと
+   Google Cloud Supportへの問い合わせ材料として使えるが、放置コストも僅かにある）。
+2. レート制限の判定はKoogの例外メッセージの文字列マッチングに依存する脆い実装（AnyDR 0078）。
    JetBrains/koogのYouTrack [KG-652](https://youtrack.jetbrains.com/issue/KG-652)にユーザーが
    コメント投稿済み。解決されれば置き換え候補。
-2. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
-3. `Molecule.rings`のDFS背後辺方式・`computeLayout`の固定角度配置は縮合環・橋かけ環を正しく
+3. `Element`に`B`（ホウ素）がなく、芳香族小文字の`b`は未対応のまま。
+4. `Molecule.rings`のDFS背後辺方式・`computeLayout`の固定角度配置は縮合環・橋かけ環を正しく
    扱えない（v1スコープでは問題ない）。
-4. `ai.koog:prompt-executor-google-client`は`koog-agents`本体（1.2.0安定版）とは独立
-   バージョニングでまだbeta（1.1.1-beta）。Geminiのモデル廃止（2.5-flash→3.5-flash対応済み）
-   のように、今後も上流のモデルライフサイクル変化への追従が必要になる可能性がある。
-5. android-appは`androidx.compose.material3:material3:1.5.0-alpha27`という不安定版に
+5. `ai.koog:prompt-executor-google-client`は`koog-agents`本体（1.2.0安定版）とは独立
+   バージョニングでまだbeta（1.1.1-beta）。
+6. android-appは`androidx.compose.material3:material3:1.5.0-alpha27`という不安定版に
    直接依存している。将来安定版で解決されたらJetBrains CMP側のmaterial3に戻すか検討の余地
    あり。
-6. このマシンのAndroid SDKは`D:\Android\Sdk`。AVD`SmileStudio_Test`（API 36）が1件作成済み。
-   エミュレータは長時間セッションでメモリ逼迫しやすく、ANRや起動遅延・システムカメラアプリの
-   ANRが起きることがある（Issue #15検証時に発生、実機ではユーザーが手動確認）。
-7. Play Console側で定期購入商品の「作成」ボタンが表示されない問題が未解決。お支払い
-   プロファイルの受け取り方法（銀行口座）を登録したが「確認待ち」のまま変化なし。原因は
-   未確定（銀行口座確認完了待ちと推測）。数日待って再確認するか、Play Consoleサポートへの
-   問い合わせが必要かもしれない。
+7. このマシンのAndroid SDKは`D:\Android\Sdk`。AVD`SmileStudio_Test`（API 36）が1件作成済み。
+8. Play Console側で定期購入商品の「作成」ボタンが表示されない問題が未解決。お支払い
+   プロファイルの受け取り方法（銀行口座）を登録したが「確認待ち」のまま変化なし。
 
 ## 次にやりそうなこと（未着手）
 
-- **Issue #34「サーバーレス関数（画像認識プロキシ）の実装」**: 次に着手する想定。Issue #33の
-  Play Console側ブロックとは独立に進められる。
-- **Issue #33の残り**: 銀行口座確認完了待ち→Play Console定期購入商品作成→RevenueCatの
-  Offering/Paywallデザイン→Webhook設定（Issue #34のCloud Functionsのエンドポイント確定後）。
-- Issue #18: 〜2026-09-23頃まで、Testers Community経由のテスターが12人以上オプトインした
-  状態を維持できているか定期的に確認。
-- 並行着手可能: Issue #27（英語対応）・#22（テストハーネス）。
-- Issue #17完了後: プライバシーポリシーの再更新（RevenueCat/Firebase Auth導入を反映）。
+- **Issue #36の実機検証**: 新しい`google-services.json`でアプリをビルドし直し、
+  エミュレータ/実機で非BYOKクラウド経路（残り回数Snackbar・無料枠使い切り時のペイウォール）
+  を確認する。次に着手する想定。
+- **Issue #33の残り**: Play Console決済プロファイル確認完了待ち→定期購入商品作成→
+  RevenueCatのOffering/Paywallデザイン→Google Play連携・Webhook URLを新Firebaseプロジェクト
+  向けに更新。
+- Issue #18: 非公開テストのテスター数を定期的に確認。
+- 並行着手可能: Issue #27（英語対応）・#22（テストハーネス）・Issue #37（APIキー設定
+  ダイアログへの購読導線追加、Issue #35完了で着手可能）。
+- Issue #17完全実装後: プライバシーポリシーの再更新。
