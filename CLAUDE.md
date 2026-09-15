@@ -45,6 +45,14 @@ RevenueCat主催のモバイルアプリハッカソン（2026/8/1〜9/30）に�
     *   `desktop-app`: Compose for Desktop アプリケーションエントリポイント。
     *   `android-app`: Androidアプリケーションエントリポイント（Shipaton 2026対応で追加、`core-smiles`/`ui-compose`を再利用）。
 *   **AI連携 (Koog):** Shipaton 2026のMVPスコープとしてJetBrains Koogによるマルチモーダル画像認識（手描き構造式 -> SMILES）を実装する。詳細は`docs/any-decision-record/0028`・`0029`。
+*   **DIフレームワーク導入判断:** `android-app`はHilt/Koin等のDIフレームワークを導入せず、
+    `remember`ベースの手動DIを採用している（`docs/any-decision-record/0137`）。新しいActivity・
+    Application-scopedシングルトン・`remember`配線を追加する際は、`docs/any-decision-record/0138`
+    の3条件（Activity跨ぎのインスタンス共有／`remember`配線3階層以上のネスト／Application-scoped
+    シングルトン2個以上）のいずれかに該当していないか確認すること。機械的に測れる指標は
+    `.\scripts\check-di-thresholds.ps1`で確認できる（意味的な判断が必要な部分は代替できないため、
+    最終判断は必ず人間/Claudeの目視で行う）。該当する場合はDIフレームワーク導入を複数案比較のうえ
+    再検討する。
 
 ## アーキテクチャと意思決定（トレードオフの提示）
 あなたは優秀なシニアエンジニアであり、私の設計のスパーリングパートナーです。
@@ -88,6 +96,7 @@ Claude, 作業の際は以下のコマンドを必要に応じて自律的に活
     これらのテストは実行されない点に注意）
 *   core-smilesのテスト: `./gradlew :core-smiles:jvmTest`
 *   デスクトップアプリ起動: `./gradlew :desktop-app:run`
+*   DI導入判断の閾値チェック: `.\scripts\check-di-thresholds.ps1`
 
 ## Agent skills
 
