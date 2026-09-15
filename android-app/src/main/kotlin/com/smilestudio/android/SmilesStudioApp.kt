@@ -1,6 +1,5 @@
 package com.smilestudio.android
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -41,11 +40,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
@@ -53,94 +49,30 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.smilestudio.android.apikey.AndroidKeystoreApiKeyEncryptor
-import com.smilestudio.android.apikey.ApiKeyStore
-import com.smilestudio.android.apikey.SharedPreferencesKeyValueStore
-import com.smilestudio.android.recognition.AndroidImageResizer
-import com.smilestudio.android.recognition.FirebaseCloudRecognizer
-import com.smilestudio.android.recognition.ImageRecognitionCoordinator
-import com.smilestudio.android.recognition.ImageRecognitionOutcome
 import com.smilestudio.android.recognition.createCaptureImageUri
 import com.smilestudio.android.recognition.readImageBytes
 import com.smilestudio.android.subscription.SubscriptionPaywall
 import com.smilestudio.android.theme.expressivePressScale
-import com.smilestudio.vision.recognizeStructure
 import kotlinx.coroutines.launch
 
-private const val API_KEY_PREFS_NAME = "api_key_prefs"
 private const val PRIVACY_POLICY_URL = "https://itisnomatter.github.io/SmilesStudio/privacy-policy/"
-private const val IMAGE_READ_FAILURE_MESSAGE = "画像の読み込みに失敗しました"
-private const val REMAINING_FREE_COUNT_MESSAGE_FORMAT = "あと%d回無料でご利用いただけます"
-
-private enum class AppTab(val label: String) {
-    HOME("ホーム"),
-    HOW_TO("使い方"),
-}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SmilesStudioApp() {
-    var selectedTab by remember { mutableStateOf(AppTab.HOME) }
-    var smilesText by remember { mutableStateOf("") }
-    var menuExpanded by remember { mutableStateOf(false) }
-    var showAboutDialog by remember { mutableStateOf(false) }
-    var showApiKeyDialog by remember { mutableStateOf(false) }
-    var showPaywall by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
-    val apiKeyStore = remember {
-        ApiKeyStore(
-            encryptor = AndroidKeystoreApiKeyEncryptor(),
-            store = SharedPreferencesKeyValueStore(
-                context.getSharedPreferences(API_KEY_PREFS_NAME, Context.MODE_PRIVATE),
-            ),
-        )
-    }
-    var currentApiKey by remember { mutableStateOf(apiKeyStore.get()) }
-
-    var showImageSourceSheet by remember { mutableStateOf(false) }
-    var isRecognizing by remember { mutableStateOf(false) }
-    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val recognitionCoordinator = remember {
-        ImageRecognitionCoordinator(
-            getApiKey = apiKeyStore::get,
-            resizeImage = AndroidImageResizer::resize,
-            recognize = ::recognizeStructure,
-            recognizeViaCloud = FirebaseCloudRecognizer::recognize,
-        )
-    }
+    val appState = rememberSmilesStudioAppState(snackbarHostState)
 
     fun runRecognition(imageUri: Uri) {
         coroutineScope.launch {
-            val imageBytes = readImageBytes(context, imageUri)
-            if (imageBytes == null) {
-                snackbarHostState.showSnackbar(IMAGE_READ_FAILURE_MESSAGE)
-                return@launch
-            }
-            isRecognizing = true
-            val outcome = try {
-                recognitionCoordinator.recognize(imageBytes)
-            } finally {
-                isRecognizing = false
-            }
-            when (outcome) {
-                is ImageRecognitionOutcome.Recognized -> {
-                    smilesText = outcome.smiles
-                    val remaining = outcome.remainingFreeCount
-                    if (remaining != null) {
-                        snackbarHostState.showSnackbar(REMAINING_FREE_COUNT_MESSAGE_FORMAT.format(remaining))
-                    }
-                }
-                is ImageRecognitionOutcome.Failed -> snackbarHostState.showSnackbar(outcome.reason)
-                ImageRecognitionOutcome.FreeTierExhausted -> showPaywall = true
-            }
+            appState.runRecognition(readImageBytes(context, imageUri))
         }
     }
 
     val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        val uri = pendingCaptureUri
+        val uri = appState.pendingCaptureUri
         if (success && uri != null) {
             runRecognition(uri)
         }
@@ -166,19 +98,22 @@ fun SmilesStudioApp() {
                 title = { Text("SmilesStudio", style = MaterialTheme.typography.titleLarge) },
                 actions = {
                     IconButton(
-                        onClick = { menuExpanded = true },
+                        onClick = { appState.menuExpanded = true },
                         interactionSource = menuButtonInteractionSource,
                         modifier = Modifier.size(48.dp).expressivePressScale(menuButtonInteractionSource),
                     ) {
                         Icon(Icons.Rounded.MoreVert, contentDescription = "メニュー")
                     }
-                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                        if (selectedTab == AppTab.HOME) {
+                    DropdownMenu(
+                        expanded = appState.menuExpanded,
+                        onDismissRequest = { appState.menuExpanded = false },
+                    ) {
+                        if (appState.selectedTab == AppTab.HOME) {
                             DropdownMenuItem(
                                 text = { Text("入力をクリア") },
                                 onClick = {
-                                    smilesText = ""
-                                    menuExpanded = false
+                                    appState.smilesText = ""
+                                    appState.menuExpanded = false
                                 },
                                 interactionSource = clearItemInteractionSource,
                                 modifier = Modifier.expressivePressScale(clearItemInteractionSource),
@@ -187,8 +122,8 @@ fun SmilesStudioApp() {
                         DropdownMenuItem(
                             text = { Text("このアプリについて") },
                             onClick = {
-                                menuExpanded = false
-                                showAboutDialog = true
+                                appState.menuExpanded = false
+                                appState.showAboutDialog = true
                             },
                             interactionSource = aboutItemInteractionSource,
                             modifier = Modifier.expressivePressScale(aboutItemInteractionSource),
@@ -196,8 +131,8 @@ fun SmilesStudioApp() {
                         DropdownMenuItem(
                             text = { Text("APIキー設定") },
                             onClick = {
-                                menuExpanded = false
-                                showApiKeyDialog = true
+                                appState.menuExpanded = false
+                                appState.showApiKeyDialog = true
                             },
                             interactionSource = apiKeyItemInteractionSource,
                             modifier = Modifier.expressivePressScale(apiKeyItemInteractionSource),
@@ -209,16 +144,16 @@ fun SmilesStudioApp() {
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    selected = selectedTab == AppTab.HOME,
-                    onClick = { selectedTab = AppTab.HOME },
+                    selected = appState.selectedTab == AppTab.HOME,
+                    onClick = { appState.selectedTab = AppTab.HOME },
                     icon = { Icon(Icons.Rounded.Home, contentDescription = null) },
                     label = { Text(AppTab.HOME.label, style = MaterialTheme.typography.labelMedium) },
                     interactionSource = homeTabInteractionSource,
                     modifier = Modifier.expressivePressScale(homeTabInteractionSource),
                 )
                 NavigationBarItem(
-                    selected = selectedTab == AppTab.HOW_TO,
-                    onClick = { selectedTab = AppTab.HOW_TO },
+                    selected = appState.selectedTab == AppTab.HOW_TO,
+                    onClick = { appState.selectedTab = AppTab.HOW_TO },
                     icon = { Icon(Icons.Rounded.QuestionMark, contentDescription = null) },
                     label = { Text(AppTab.HOW_TO.label, style = MaterialTheme.typography.labelMedium) },
                     interactionSource = howToTabInteractionSource,
@@ -230,7 +165,7 @@ fun SmilesStudioApp() {
         val enterAlphaSpec = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
         val enterOffsetSpec = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
         AnimatedContent(
-            targetState = selectedTab,
+            targetState = appState.selectedTab,
             modifier = Modifier.padding(innerPadding),
             transitionSpec = {
                 (fadeIn(animationSpec = enterAlphaSpec) +
@@ -241,9 +176,9 @@ fun SmilesStudioApp() {
         ) { tab ->
             when (tab) {
                 AppTab.HOME -> HomeContent(
-                    smilesText = smilesText,
-                    onSmilesTextChange = { smilesText = it },
-                    onImageRecognitionClick = { showImageSourceSheet = true },
+                    smilesText = appState.smilesText,
+                    onSmilesTextChange = { appState.smilesText = it },
+                    onImageRecognitionClick = { appState.showImageSourceSheet = true },
                     modifier = Modifier.fillMaxSize(),
                 )
                 AppTab.HOW_TO -> HowToContent(modifier = Modifier.fillMaxSize())
@@ -251,11 +186,11 @@ fun SmilesStudioApp() {
         }
     }
 
-    if (showAboutDialog) {
+    if (appState.showAboutDialog) {
         AlertDialog(
-            onDismissRequest = { showAboutDialog = false },
+            onDismissRequest = { appState.showAboutDialog = false },
             confirmButton = {
-                TextButton(onClick = { showAboutDialog = false }) { Text("閉じる") }
+                TextButton(onClick = { appState.showAboutDialog = false }) { Text("閉じる") }
             },
             title = { Text("SmilesStudioについて") },
             text = {
@@ -275,47 +210,41 @@ fun SmilesStudioApp() {
         )
     }
 
-    if (showApiKeyDialog) {
+    if (appState.showApiKeyDialog) {
         ApiKeySettingsDialog(
-            currentApiKey = currentApiKey,
-            onSave = { apiKey ->
-                apiKeyStore.save(apiKey)
-                currentApiKey = apiKeyStore.get()
-            },
-            onDelete = {
-                apiKeyStore.delete()
-                currentApiKey = null
-            },
-            onDismiss = { showApiKeyDialog = false },
+            currentApiKey = appState.currentApiKey,
+            onSave = appState::saveApiKey,
+            onDelete = appState::deleteApiKey,
+            onDismiss = { appState.showApiKeyDialog = false },
         )
     }
 
-    if (showPaywall) {
+    if (appState.showPaywall) {
         Dialog(
-            onDismissRequest = { showPaywall = false },
+            onDismissRequest = { appState.dismissPaywall() },
             properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
-            SubscriptionPaywall(onDismiss = { showPaywall = false })
+            SubscriptionPaywall(onDismiss = { appState.dismissPaywall() })
         }
     }
 
-    if (showImageSourceSheet) {
+    if (appState.showImageSourceSheet) {
         ImageSourceBottomSheet(
             onTakePhoto = {
-                showImageSourceSheet = false
+                appState.showImageSourceSheet = false
                 val uri = createCaptureImageUri(context)
-                pendingCaptureUri = uri
+                appState.pendingCaptureUri = uri
                 takePictureLauncher.launch(uri)
             },
             onPickFromGallery = {
-                showImageSourceSheet = false
+                appState.showImageSourceSheet = false
                 pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             },
-            onDismiss = { showImageSourceSheet = false },
+            onDismiss = { appState.showImageSourceSheet = false },
         )
     }
 
-    if (isRecognizing) {
+    if (appState.isRecognizing) {
         RecognitionLoadingOverlay()
     }
     }
