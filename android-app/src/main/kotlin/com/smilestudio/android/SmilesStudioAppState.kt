@@ -80,7 +80,7 @@ class SmilesStudioAppState(
                     showSnackbar(REMAINING_FREE_COUNT_MESSAGE_FORMAT.format(remaining))
                 }
             }
-            is ImageRecognitionOutcome.Failed -> showSnackbar(outcome.reason)
+            is ImageRecognitionOutcome.Failed -> showSnackbar("予期せぬエラーが発生しました")
             ImageRecognitionOutcome.FreeTierExhausted -> showPaywall = true
         }
     }
